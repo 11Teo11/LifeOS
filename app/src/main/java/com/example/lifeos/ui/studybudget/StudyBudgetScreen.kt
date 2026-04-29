@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.db.entity.Transaction
 
 @Composable
-fun StudyBudgetScreen(viewModel: StudyBudgetViewModel) {
+fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val importState by viewModel.importState.collectAsState()
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
@@ -34,7 +34,7 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel) {
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
