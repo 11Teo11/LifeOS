@@ -51,6 +51,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.material.icons.extended)
+
 
     // Room
     implementation(libs.androidx.room.runtime)
@@ -59,6 +61,9 @@ dependencies {
 
     // CSV
     implementation(libs.opencsv)
+
+    implementation(libs.workmanager)
+    implementation(libs.datastore)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

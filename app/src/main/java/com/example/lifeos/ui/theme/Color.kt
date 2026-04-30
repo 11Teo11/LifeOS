@@ -2,10 +2,23 @@ package com.example.lifeos.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Primary — mov pal
+val Lavender = Color(0xFFB39DDB)
+val LavenderLight = Color(0xFFEDE7F6)
+val LavenderDark = Color(0xFF7E57C2)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Secondary — roz pal
+val BlushPink = Color(0xFFF48FB1)
+val BlushPinkLight = Color(0xFFFCE4EC)
+val BlushPinkDark = Color(0xFFC2185B)
+
+// Tertiary — verde pal
+val MintGreen = Color(0xFFA5D6A7)
+val MintGreenLight = Color(0xFFE8F5E9)
+val MintGreenDark = Color(0xFF388E3C)
+
+// Neutral
+val WarmWhite = Color(0xFFFFFBF7)
+val SoftGray = Color(0xFFF3EFF4)
+val TextDark = Color(0xFF3D2C4E)
+val TextMuted = Color(0xFF7A6080)
