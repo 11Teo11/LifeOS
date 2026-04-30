@@ -23,14 +23,41 @@ import com.example.lifeos.ui.habit.HabitViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
+import androidx.work.*
+import com.example.lifeos.worker.HabitResetWorker
+import java.util.concurrent.TimeUnit
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var habitViewModel: HabitViewModel
 
+    private fun scheduleHabitReset() {
+        val now = Calendar.getInstance()
+        val midnight = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+        val delay = midnight.timeInMillis - now.timeInMillis
+
+        val resetRequest = PeriodicWorkRequestBuilder<HabitResetWorker>(1, TimeUnit.DAYS)
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "habit_reset",
+            ExistingPeriodicWorkPolicy.KEEP,
+            resetRequest
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        scheduleHabitReset()
 
         val database = HabitDatabase.getDatabase(this)
         val repository = HabitRepository(database.habitDao())
