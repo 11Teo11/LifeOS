@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.habit.Habit
 
 @Composable
-fun HabitScreen(viewModel: HabitViewModel) {
+fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
     val habits by viewModel.habits.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
