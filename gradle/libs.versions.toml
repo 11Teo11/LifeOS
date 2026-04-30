@@ -33,6 +33,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "opencsv" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 workmanager = { group = "androidx.work", name = "work-runtime-ktx", version = "2.9.0" }
+datastore = { group = "androidx.datastore", name = "datastore-preferences", version = "1.0.0" }
 
 
 [plugins]

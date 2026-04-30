@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.opencsv)
 
     implementation(libs.workmanager)
+    implementation(libs.datastore)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
