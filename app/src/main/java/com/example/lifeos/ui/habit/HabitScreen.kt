@@ -17,11 +17,14 @@ fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier.padding(bottom = 64.dp)
+            ) {
                 Text("+")
             }
         }
-    ) { padding ->
+    ){ padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
                 text = "Obiceiurile mele",
