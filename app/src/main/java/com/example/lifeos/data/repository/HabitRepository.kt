@@ -1,5 +1,8 @@
-package com.example.lifeos.data.habit
+package com.example.lifeos.data.repository
 
+import com.example.lifeos.data.db.dao.HabitDao
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.entity.HabitLog
 import kotlinx.coroutines.flow.Flow
 
 class HabitRepository(private val habitDao: HabitDao) {

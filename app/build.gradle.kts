@@ -62,8 +62,11 @@ dependencies {
     // CSV
     implementation(libs.opencsv)
 
-    implementation(libs.workmanager)
-    implementation(libs.datastore)
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

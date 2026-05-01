@@ -1,4 +1,4 @@
-package com.example.lifeos.data.habit
+package com.example.lifeos.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
         entity = Habit::class,
         parentColumns = ["id"],
         childColumns = ["habitId"],
-        onDelete = ForeignKey.CASCADE
+        onDelete = ForeignKey.Companion.CASCADE
     )]
 )
 data class HabitLog(

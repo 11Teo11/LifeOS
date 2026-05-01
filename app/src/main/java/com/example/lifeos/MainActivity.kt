@@ -16,14 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.lifeos.data.habit.HabitDatabase
-import com.example.lifeos.data.habit.HabitRepository
+import com.example.lifeos.data.repository.HabitRepository
 import com.example.lifeos.ui.habit.HabitScreen
 import com.example.lifeos.ui.habit.HabitViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
 import androidx.work.*
+import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.worker.HabitResetWorker
 import java.util.concurrent.TimeUnit
 import java.util.Calendar
@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         scheduleHabitReset()
 
-        val database = HabitDatabase.getDatabase(this)
+        val database = AppDatabase.getDatabase(this)
         val repository = HabitRepository(database.habitDao())
         habitViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {

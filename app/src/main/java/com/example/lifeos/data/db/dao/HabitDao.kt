@@ -1,10 +1,12 @@
-package com.example.lifeos.data.habit
+package com.example.lifeos.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import androidx.room.Delete
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.entity.HabitLog
 import kotlinx.coroutines.flow.Flow
 
 @Dao

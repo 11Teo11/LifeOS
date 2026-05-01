@@ -6,15 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.lifeos.data.db.dao.TransactionDao
 import com.example.lifeos.data.db.entity.Transaction
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.dao.HabitDao
+import com.example.lifeos.data.db.entity.HabitLog
 
 @Database(
-    entities = [Transaction::class],
-    version = 1,
+    entities = [Transaction::class, Habit::class, HabitLog::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
+    abstract fun habitDao(): HabitDao
 
     companion object {
         @Volatile
@@ -26,7 +30,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "lifeos_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                 INSTANCE = instance
                 instance
             }

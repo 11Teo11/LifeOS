@@ -2,8 +2,8 @@ package com.example.lifeos.ui.habit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifeos.data.habit.Habit
-import com.example.lifeos.data.habit.HabitRepository
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.repository.HabitRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
