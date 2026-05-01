@@ -76,7 +76,7 @@ fun HabitItem(habit: Habit, onCheck: () -> Unit, onDelete: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge
         )
         TextButton(onClick = onDelete) {
-            Text("Șterge")
+            Text("Delete")
         }
     }
 }
@@ -87,7 +87,7 @@ fun AddHabitDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) ->
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Habit nou") },
+        title = { Text("New Habit") },
         text = {
             Column {
                 OutlinedTextField(

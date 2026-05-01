@@ -4,21 +4,36 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.lifeos.data.db.dao.BudgetTargetDao
 import com.example.lifeos.data.db.dao.TransactionDao
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.db.entity.Habit
 import com.example.lifeos.data.db.dao.HabitDao
 import com.example.lifeos.data.db.entity.HabitLog
+import com.example.lifeos.data.db.entity.BudgetTarget
+import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.entity.AcademicEvent
 
 @Database(
-    entities = [Transaction::class, Habit::class, HabitLog::class],
-    version = 2,
+    entities = [
+        Transaction::class,
+        BudgetTarget::class,
+        Habit::class,
+        HabitLog::class,
+        DailyCheckIn::class,
+        AcademicEvent::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
     abstract fun habitDao(): HabitDao
+    abstract fun budgetTargetDao(): BudgetTargetDao
+    // TODO: DAO for DailyCheckIn and AcademicEvent
+//    abstract fun dailyCheckInDao(): DailyCheckInDao
+//    abstract fun academicEventDao(): AcademicEventDao
 
     companion object {
         @Volatile
