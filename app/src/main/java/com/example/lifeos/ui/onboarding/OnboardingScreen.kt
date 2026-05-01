@@ -64,7 +64,7 @@ fun OnboardingScreen(
                 userName = userName,
                 onNameChange = { viewModel.setUserName(it) }
             )
-            1 -> StepCalendar()
+            1 -> StepCalendar(onSkipCalendar = { viewModel.nextStep() })
             2 -> StepBudget(
                 budget = monthlyBudget,
                 onBudgetChange = { viewModel.setMonthlyBudget(it) }
@@ -124,7 +124,7 @@ fun StepProfile(userName: String, onNameChange: (String) -> Unit) {
 }
 
 @Composable
-fun StepCalendar() {
+fun StepCalendar(onSkipCalendar: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "Connect Google Calendar",
@@ -149,7 +149,7 @@ fun StepCalendar() {
             Text("Connect Google Calendar")
         }
         Spacer(modifier = Modifier.height(8.dp))
-        TextButton(onClick = {}) {
+        TextButton(onClick = onSkipCalendar) {
             Text("I'll do this later")
         }
     }

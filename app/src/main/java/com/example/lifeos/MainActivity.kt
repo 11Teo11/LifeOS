@@ -22,6 +22,8 @@ import com.example.lifeos.ui.habit.HabitViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
+import com.example.lifeos.ui.onboarding.OnboardingScreen
+import com.example.lifeos.ui.onboarding.OnboardingViewModel
 import androidx.work.*
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.worker.HabitResetWorker
@@ -71,37 +73,47 @@ class MainActivity : ComponentActivity() {
         setContent {
             LifeOSTheme {
                 val context = LocalContext.current
-                val studyBudgetViewModel = remember { StudyBudgetViewModel(context) }
-                var selectedTab by remember { mutableIntStateOf(0) }
+                val onboardingViewModel = remember { OnboardingViewModel(context) }
+                val isOnboardingCompleted by onboardingViewModel.isCompleted.collectAsState()
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        NavigationBar {
-                            NavigationBarItem(
-                                selected = selectedTab == 0,
-                                onClick = { selectedTab = 0 },
-                                icon = { Icon(Icons.Default.Home, contentDescription = "Budget") },
-                                label = { Text("Budget") }
+                if (!isOnboardingCompleted) {
+                    OnboardingScreen(
+                        viewModel = onboardingViewModel,
+                        onOnboardingComplete = { }
+                    )
+                } else {
+                    val studyBudgetViewModel = remember { StudyBudgetViewModel(context) }
+                    var selectedTab by remember { mutableIntStateOf(0) }
+
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        bottomBar = {
+                            NavigationBar {
+                                NavigationBarItem(
+                                    selected = selectedTab == 0,
+                                    onClick = { selectedTab = 0 },
+                                    icon = { Icon(Icons.Default.Home, contentDescription = "Budget") },
+                                    label = { Text("Budget") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 1,
+                                    onClick = { selectedTab = 1 },
+                                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Habits") },
+                                    label = { Text("Habits") }
+                                )
+                            }
+                        }
+                    ) { innerPadding ->
+                        when (selectedTab) {
+                            0 -> StudyBudgetScreen(
+                                viewModel = studyBudgetViewModel,
+                                modifier = Modifier.padding(innerPadding)
                             )
-                            NavigationBarItem(
-                                selected = selectedTab == 1,
-                                onClick = { selectedTab = 1 },
-                                icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Habits") },
-                                label = { Text("Habits") }
+                            1 -> HabitScreen(
+                                viewModel = habitViewModel,
+                                modifier = Modifier.padding(innerPadding)
                             )
                         }
-                    }
-                ) { innerPadding ->
-                    when (selectedTab) {
-                        0 -> StudyBudgetScreen(
-                            viewModel = studyBudgetViewModel,
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                        1 -> HabitScreen(
-                            viewModel = habitViewModel,
-                            modifier = Modifier.padding(innerPadding)
-                        )
                     }
                 }
             }
