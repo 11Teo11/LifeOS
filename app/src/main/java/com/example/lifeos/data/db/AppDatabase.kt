@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.lifeos.data.db.dao.AcademicEventDao
 import com.example.lifeos.data.db.dao.BudgetTargetDao
 import com.example.lifeos.data.db.dao.TransactionDao
 import com.example.lifeos.data.db.entity.Transaction
@@ -31,9 +32,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun habitDao(): HabitDao
     abstract fun budgetTargetDao(): BudgetTargetDao
-    // TODO: DAO for DailyCheckIn and AcademicEvent
+    abstract fun academicEventDao(): AcademicEventDao
+    // TODO: DAO for DailyCheckIn
 //    abstract fun dailyCheckInDao(): DailyCheckInDao
-//    abstract fun academicEventDao(): AcademicEventDao
 
     companion object {
         @Volatile

@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -25,6 +26,8 @@ import com.example.lifeos.ui.onboarding.OnboardingScreen
 import com.example.lifeos.ui.onboarding.OnboardingViewModel
 import com.example.lifeos.ui.studybudget.BudgetSettingsScreen
 import com.example.lifeos.ui.studybudget.BudgetSettingsViewModel
+import com.example.lifeos.ui.studybudget.CalendarScreen
+import com.example.lifeos.ui.studybudget.CalendarViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
@@ -79,6 +82,7 @@ class MainActivity : ComponentActivity() {
                 val isOnboardingCompleted by onboardingViewModel.isCompleted.collectAsState()
                 val studyBudgetViewModel = remember { StudyBudgetViewModel(context) }
                 val budgetSettingsViewModel = remember { BudgetSettingsViewModel(context) }
+                val calendarViewModel = remember { CalendarViewModel(context) }
                 var selectedTab by remember { mutableIntStateOf(0) }
 
                 if (!isOnboardingCompleted) {
@@ -106,6 +110,12 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 2,
                                     onClick = { selectedTab = 2 },
+                                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar") },
+                                    label = { Text("Calendar") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 3,
+                                    onClick = { selectedTab = 3 },
                                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
                                     label = { Text("Settings") }
                                 )
@@ -121,7 +131,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = habitViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
-                            2 -> BudgetSettingsScreen(
+                            2 -> CalendarScreen(
+                                viewModel = calendarViewModel,
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                            3 -> BudgetSettingsScreen(
                                 viewModel = budgetSettingsViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
