@@ -9,24 +9,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.work.*
+import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.repository.HabitRepository
 import com.example.lifeos.ui.habit.HabitScreen
 import com.example.lifeos.ui.habit.HabitViewModel
+import com.example.lifeos.ui.studybudget.BudgetSettingsScreen
+import com.example.lifeos.ui.studybudget.BudgetSettingsViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
-import androidx.work.*
-import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.worker.HabitResetWorker
-import java.util.concurrent.TimeUnit
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -72,6 +74,7 @@ class MainActivity : ComponentActivity() {
             LifeOSTheme {
                 val context = LocalContext.current
                 val studyBudgetViewModel = remember { StudyBudgetViewModel(context) }
+                val budgetSettingsViewModel = remember { BudgetSettingsViewModel(context) }
                 var selectedTab by remember { mutableIntStateOf(0) }
 
                 Scaffold(
@@ -90,6 +93,12 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Habits") },
                                 label = { Text("Habits") }
                             )
+                            NavigationBarItem(
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
+                                icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                                label = { Text("Settings") }
+                            )
                         }
                     }
                 ) { innerPadding ->
@@ -100,6 +109,10 @@ class MainActivity : ComponentActivity() {
                         )
                         1 -> HabitScreen(
                             viewModel = habitViewModel,
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                        2 -> BudgetSettingsScreen(
+                            viewModel = budgetSettingsViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
