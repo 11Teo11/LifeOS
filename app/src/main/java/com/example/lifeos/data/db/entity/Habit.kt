@@ -1,4 +1,4 @@
-package com.example.lifeos.data.habit
+package com.example.lifeos.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

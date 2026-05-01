@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.lifeos.data.habit.Habit
+import com.example.lifeos.data.db.entity.Habit
 
 @Composable
 fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
@@ -27,14 +27,14 @@ fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
     ){ padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
-                text = "Obiceiurile mele",
+                text = "My Habits",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(16.dp)
             )
 
             if (habits.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nu ai obiceiuri încă. Apasă + pentru a adăuga.")
+                    Text("No habits yet. Press + to add one.")
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -93,17 +93,17 @@ fun AddHabitDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) ->
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nume obicei") }
+                    label = { Text("Habit name") }
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 if (name.isNotBlank()) onConfirm(name, "daily", "#FF6B9D")
-            }) { Text("Adaugă") }
+            }) { Text("Add") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Anulează") }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
