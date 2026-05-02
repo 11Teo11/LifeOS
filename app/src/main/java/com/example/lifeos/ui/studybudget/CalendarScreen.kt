@@ -155,7 +155,7 @@ fun AcademicEventItem(event: AcademicEvent) {
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = event.startDate,
+                text = formatEventDate(event.startDate),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -167,5 +167,24 @@ fun AcademicEventItem(event: AcademicEvent) {
                 )
             }
         }
+    }
+}
+
+fun formatEventDate(dateString: String): String {
+    return try {
+        val inputFormats = listOf(
+            java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+            java.time.format.DateTimeFormatter.ISO_DATE_TIME
+        )
+        var localDate: java.time.LocalDateTime? = null
+        for (format in inputFormats) {
+            try {
+                localDate = java.time.OffsetDateTime.parse(dateString, format).toLocalDateTime()
+                break
+            } catch (e: Exception) { continue }
+        }
+        localDate?.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")) ?: dateString
+    } catch (e: Exception) {
+        dateString
     }
 }

@@ -14,8 +14,12 @@ import java.util.Date
 class GoogleCalendarService(private val context: Context) {
 
     private val HIGH_PRESSURE_KEYWORDS = listOf(
-        "exam", "examen", "test", "deadline", "colocviu",
-        "laborator", "seminar", "proiect", "prezentare"
+        // Romanian
+        "exam", "examen", "test", "deadline", "colocviu", "tema",
+        "laborator", "seminar", "proiect", "prezentare",
+        // English
+        "assignment", "quiz", "midterm", "final", "submission",
+        "defense", "presentation", "project", "lab", "homework"
     )
 
     fun buildCalendarService(accountName: String): Calendar {
