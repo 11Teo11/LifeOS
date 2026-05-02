@@ -1,7 +1,5 @@
 package com.example.lifeos.ui.studybudget
 
-import android.Manifest
-import android.accounts.AccountManager
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
@@ -19,11 +17,16 @@ import kotlinx.coroutines.withContext
 sealed class CalendarState {
     object Idle : CalendarState()
     object Loading : CalendarState()
-    data class Success(val eventCount: Int, val highPressureCount: Int) : CalendarState()
+    data class Success(
+        val eventCount: Int,
+        val highPressureCount: Int,
+        val mediumPressureCount: Int
+    ) : CalendarState()
     data class Error(val message: String) : CalendarState()
     object NeedsAccountPicker : CalendarState()
-    data class NeedsConsent(val intent: android.content.Intent) : CalendarState()
+    data class NeedsConsent(val intent: Intent) : CalendarState()
 }
+
 class CalendarViewModel(private val context: Context) : ViewModel() {
 
     private val calendarService = GoogleCalendarService(context)
@@ -54,7 +57,7 @@ class CalendarViewModel(private val context: Context) : ViewModel() {
                         title = event.title,
                         startDate = event.startDate,
                         endDate = event.endDate,
-                        isHighPressure = event.isHighPressure
+                        pressureLevel = event.pressureLevel
                     )
                 }
 
@@ -64,7 +67,8 @@ class CalendarViewModel(private val context: Context) : ViewModel() {
 
                 _calendarState.value = CalendarState.Success(
                     eventCount = events.size,
-                    highPressureCount = events.count { it.isHighPressure }
+                    highPressureCount = events.count { it.pressureLevel == "high" },
+                    mediumPressureCount = events.count { it.pressureLevel == "medium" }
                 )
             } catch (e: com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException) {
                 _calendarState.value = CalendarState.NeedsConsent(e.intent)
@@ -74,7 +78,64 @@ class CalendarViewModel(private val context: Context) : ViewModel() {
         }
     }
 
+    fun addManualEvent(
+        title: String,
+        startDate: String,
+        endDate: String,
+        pressureLevel: String
+    ) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                db.academicEventDao().insertAll(
+                    listOf(
+                        AcademicEvent(
+                            googleEventId = "manual_${System.currentTimeMillis()}",
+                            title = title,
+                            startDate = startDate,
+                            endDate = endDate,
+                            pressureLevel = pressureLevel,
+                            isManuallyAdded = true
+                        )
+                    )
+                )
+            }
+        }
+    }
+
     fun resetState() {
         _calendarState.value = CalendarState.Idle
+    }
+
+    fun updatePressureLevel(event: AcademicEvent, newLevel: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                db.academicEventDao().insertAll(
+                    listOf(event.copy(pressureLevel = newLevel))
+                )
+            }
+        }
+    }
+
+    fun deleteEvent(event: AcademicEvent) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                db.academicEventDao().deleteEvent(event)
+            }
+        }
+    }
+
+    fun updateEvent(event: AcademicEvent, title: String, startDate: String, pressureLevel: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                db.academicEventDao().insertAll(
+                    listOf(event.copy(
+                        title = title,
+                        startDate = startDate,
+                        endDate = startDate,
+                        pressureLevel = pressureLevel
+                    ))
+                )
+            }
+        }
     }
 }

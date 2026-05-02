@@ -13,12 +13,18 @@ interface AcademicEventDao {
     @Query("SELECT * FROM academic_events ORDER BY startDate ASC")
     fun getAllEvents(): Flow<List<AcademicEvent>>
 
-    @Query("SELECT * FROM academic_events WHERE isHighPressure = 1 ORDER BY startDate ASC")
+    @Query("SELECT * FROM academic_events WHERE pressureLevel = 'high' ORDER BY startDate ASC")
     fun getHighPressureEvents(): Flow<List<AcademicEvent>>
+
+    @Query("SELECT * FROM academic_events WHERE pressureLevel = 'medium' ORDER BY startDate ASC")
+    fun getMediumPressureEvents(): Flow<List<AcademicEvent>>
 
     @Query("SELECT * FROM academic_events WHERE startDate BETWEEN :startDate AND :endDate")
     fun getEventsBetweenDates(startDate: String, endDate: String): Flow<List<AcademicEvent>>
 
     @Query("DELETE FROM academic_events")
     suspend fun deleteAllEvents()
+
+    @Delete
+    suspend fun deleteEvent(event: AcademicEvent)
 }
