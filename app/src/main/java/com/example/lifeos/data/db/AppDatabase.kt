@@ -24,7 +24,7 @@ import com.example.lifeos.data.db.entity.AcademicEvent
         DailyCheckIn::class,
         AcademicEvent::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
