@@ -19,6 +19,8 @@ fun OnboardingScreen(
     val currentStep by viewModel.currentStep.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val monthlyBudget by viewModel.monthlyBudget.collectAsState()
+    var showNameError by remember { mutableStateOf(false) }
+    var showBudgetError by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -63,12 +65,20 @@ fun OnboardingScreen(
         when (currentStep) {
             0 -> StepProfile(
                 userName = userName,
-                onNameChange = { viewModel.setUserName(it) }
+                onNameChange = {
+                    viewModel.setUserName(it)
+                    if (it.isNotBlank()) showNameError = false
+                },
+                showError = showNameError
             )
             1 -> StepCalendar(onSkipCalendar = { viewModel.nextStep() })
             2 -> StepBudget(
                 budget = monthlyBudget,
-                onBudgetChange = { viewModel.setMonthlyBudget(it) }
+                onBudgetChange = {
+                    viewModel.setMonthlyBudget(it)
+                    if (it.isNotBlank()) showBudgetError = false
+                },
+                showError = showBudgetError
             )
         }
 
@@ -87,11 +97,20 @@ fun OnboardingScreen(
             }
 
             Button(onClick = {
-                if (currentStep < 2) {
-                    viewModel.nextStep()
-                } else {
-                    viewModel.completeOnboarding()
-                    onOnboardingComplete()
+                when (currentStep) {
+                    0 -> {
+                        if (userName.isBlank()) showNameError = true
+                        else viewModel.nextStep()
+                    }
+                    1 -> viewModel.nextStep()
+                    2 -> {
+                        if (monthlyBudget.isBlank() || monthlyBudget.toDoubleOrNull() == null) {
+                            showBudgetError = true
+                        } else {
+                            viewModel.completeOnboarding()
+                            onOnboardingComplete()
+                        }
+                    }
                 }
             }) {
                 Text(if (currentStep < 2) "Continue" else "Let's go!")
@@ -101,7 +120,7 @@ fun OnboardingScreen(
 }
 
 @Composable
-fun StepProfile(userName: String, onNameChange: (String) -> Unit) {
+fun StepProfile(userName: String, onNameChange: (String) -> Unit, showError: Boolean = false) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "What's your name?",
@@ -119,6 +138,10 @@ fun StepProfile(userName: String, onNameChange: (String) -> Unit) {
             value = userName,
             onValueChange = onNameChange,
             label = { Text("Your name") },
+            isError = showError,
+            supportingText = if (showError) {
+                { Text("Please enter your name") }
+            } else null,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -157,7 +180,7 @@ fun StepCalendar(onSkipCalendar: () -> Unit) {
 }
 
 @Composable
-fun StepBudget(budget: String, onBudgetChange: (String) -> Unit) {
+fun StepBudget(budget: String, onBudgetChange: (String) -> Unit, showError: Boolean = false) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "What's your monthly budget?",
@@ -176,6 +199,10 @@ fun StepBudget(budget: String, onBudgetChange: (String) -> Unit) {
             onValueChange = onBudgetChange,
             label = { Text("Monthly budget (RON)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = showError,
+            supportingText = if (showError) {
+                { Text("Please enter a valid amount") }
+            } else null,
             modifier = Modifier.fillMaxWidth()
         )
     }
