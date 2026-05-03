@@ -13,7 +13,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
-    onOnboardingComplete: () -> Unit
+    onOnboardingComplete: () -> Unit,
+    isReEntry: Boolean = false
 ) {
     val currentStep by viewModel.currentStep.collectAsState()
     val userName by viewModel.userName.collectAsState()
@@ -30,10 +31,10 @@ fun OnboardingScreen(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = {
-                viewModel.skipOnboarding()
+                if (!isReEntry) viewModel.skipOnboarding()
                 onOnboardingComplete()
             }) {
-                Text("Skip")
+                Text(if (isReEntry) "Cancel" else "Skip")
             }
         }
 

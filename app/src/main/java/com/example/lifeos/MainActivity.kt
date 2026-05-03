@@ -115,7 +115,8 @@ class MainActivity : ComponentActivity() {
                 if (!isOnboardingCompleted || showOnboardingFromSettings) {
                     OnboardingScreen(
                         viewModel = onboardingViewModel,
-                        onOnboardingComplete = { showOnboardingFromSettings = false }
+                        onOnboardingComplete = { showOnboardingFromSettings = false },
+                        isReEntry = showOnboardingFromSettings
                     )
                 } else {
                     Scaffold(
