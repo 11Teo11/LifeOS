@@ -24,4 +24,7 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE date = :date AND amount = :amount AND description = :description")
     suspend fun countDuplicates(date: String, amount: Double, description: String): Int
+
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    suspend fun getAllTransactionsOnce(): List<Transaction>
 }

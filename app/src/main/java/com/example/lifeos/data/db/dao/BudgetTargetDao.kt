@@ -19,6 +19,9 @@ interface BudgetTargetDao {
     @Query("UPDATE budget_targets SET notificationSentAt80 = :sent WHERE category = :category")
     suspend fun updateNotificationStatus(category: String, sent: Boolean)
 
+    @Query("SELECT * FROM budget_targets")
+    suspend fun getAllBudgetTargetsOnce(): List<BudgetTarget>
+
     @Delete
     suspend fun deleteBudgetTarget(budgetTarget: BudgetTarget)
 }

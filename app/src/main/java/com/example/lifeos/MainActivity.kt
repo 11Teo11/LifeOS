@@ -31,6 +31,8 @@ import com.example.lifeos.ui.studybudget.CalendarViewModel
 import com.example.lifeos.ui.studybudget.StudyBudgetScreen
 import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
+import com.example.lifeos.util.NotificationHelper
+import com.example.lifeos.worker.BudgetCheckWorker
 import com.example.lifeos.worker.HabitResetWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -61,10 +63,33 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun scheduleBudgetCheck() {
+        val budgetCheckRequest = PeriodicWorkRequestBuilder<BudgetCheckWorker>(1, TimeUnit.HOURS)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "budget_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            budgetCheckRequest
+        )
+    }
+
+    private fun requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                1001
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         scheduleHabitReset()
+        NotificationHelper.createNotificationChannel(this)
+        scheduleBudgetCheck()
+        requestNotificationPermission()
 
         val database = AppDatabase.getDatabase(this)
         val repository = HabitRepository(database.habitDao())

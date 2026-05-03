@@ -20,7 +20,7 @@ fun BudgetSettingsScreen(
     val budgetTargets by viewModel.budgetTargets.collectAsState(initial = emptyList())
     val saveState by viewModel.saveState.collectAsState()
 
-    var selectedCategory by remember { mutableStateOf(DEFAULT_CATEGORIES.first()) }
+    var selectedCategory by remember { mutableStateOf(ALL_CATEGORIES.first()) }
     var budgetInput by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -88,7 +88,7 @@ fun BudgetSettingsScreen(
 
     if (showAddDialog) {
         AddBudgetDialog(
-            categories = DEFAULT_CATEGORIES,
+            categories = ALL_CATEGORIES,
             selectedCategory = selectedCategory,
             budgetInput = budgetInput,
             onCategorySelected = { selectedCategory = it },
@@ -128,7 +128,7 @@ fun BudgetTargetItem(
         ) {
             Column {
                 Text(
-                    text = budget.category,
+                    text = if (budget.category == "Total") "💰 Total Budget" else budget.category,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
@@ -170,7 +170,7 @@ fun AddBudgetDialog(
                     onExpandedChange = { expanded = it }
                 ) {
                     OutlinedTextField(
-                        value = selectedCategory,
+                        value = if (selectedCategory == "Total") "💰 Total Budget" else selectedCategory,
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = {
@@ -186,7 +186,7 @@ fun AddBudgetDialog(
                     ) {
                         categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category) },
+                                text = { Text(if (category == "Total") "💰 Total Budget" else category) },
                                 onClick = {
                                     onCategorySelected(category)
                                     expanded = false

@@ -3,11 +3,14 @@ package com.example.lifeos.ui.studybudget
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.repository.TransactionRepository
 import com.example.lifeos.util.CsvParseResult
 import com.example.lifeos.util.CsvParser
+import com.example.lifeos.worker.BudgetCheckWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +40,7 @@ private val REVOLUT_EXPORT_INSTRUCTIONS =
             "4. Select CSV format\n" +
             "5. Choose date range and export"
 
-class StudyBudgetViewModel(context: Context) : ViewModel() {
+class StudyBudgetViewModel(private val context: Context) : ViewModel() {
 
     private val repository = TransactionRepository(
         AppDatabase.getDatabase(context).transactionDao()
@@ -100,6 +103,12 @@ class StudyBudgetViewModel(context: Context) : ViewModel() {
                         }
 
                         repository.insertTransactions(toInsert)
+
+                        // Trigger budget check immediately after import
+                        val budgetCheckRequest = OneTimeWorkRequestBuilder<BudgetCheckWorker>()
+                            .build()
+                        WorkManager.getInstance(context).enqueue(budgetCheckRequest)
+
                         _importState.value = ImportState.Success(
                             ImportResult(imported = imported, skipped = skipped)
                         )

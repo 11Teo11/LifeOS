@@ -14,8 +14,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 val DEFAULT_CATEGORIES = listOf(
-    "Food", "Transport", "Entertainment", "Shopping", "Health", "Education", "Other"
+    "🍔 Food", "🚌 Transport", "🎬 Entertainment",
+    "🛍️ Shopping", "💊 Health", "📚 Education", "📦 Other"
 )
+
+val ALL_CATEGORIES = listOf("💰 Total") + DEFAULT_CATEGORIES
 
 class BudgetSettingsViewModel(context: Context) : ViewModel() {
 
