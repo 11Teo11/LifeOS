@@ -236,3 +236,69 @@ Dacă îl publici accidental pe GitHub, regenerează imediat cheia din Firebase 
 | Raportează bug-uri ca Issues | Rezolva bug-uri fără să le documentezi |
 | Cere Approve înainte de Merge | Da Merge fără review |
 | Un singur `AppDatabase` pentru tot proiectul | Crea baze de date separate per modul |
+
+---
+
+## 13. Categorii de buget — lista oficială
+
+Categoriile sunt definite în `BudgetSettingsViewModel.kt`. Nu le schimbați fără să anunțați echipa — orice modificare afectează notificările și clasificarea Agent 2.
+
+Lista curentă:
+- 💰 Total — buget total lunar (sumă toate tranzacțiile)
+- 🍔 Food
+- 🚌 Transport
+- 🎬 Entertainment
+- 🛍️ Shopping
+- 💊 Health
+- 📚 Education
+- 📦 Other
+
+> ⚠️ Categoria `"💰 Total"` e specială — verifică suma tuturor tranzacțiilor, nu pe categorie. Nu o redenumi.
+
+---
+
+## 14. Notificări — cum funcționează
+
+Aplicația trimite o notificare când o categorie de buget atinge 80% din limita lunară.
+
+**Cum e implementat:**
+- `BudgetCheckWorker` rulează o dată pe oră (WorkManager periodic)
+- Se declanșează și imediat după import CSV
+- Notificarea se trimite o singură dată per categorie per lună (`notificationSentAt80 = true`)
+- Pentru a reseta notificările, șterge și recreează bugetul din Settings
+
+**Permisiuni necesare în `AndroidManifest.xml`:**
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+```
+
+Permisiunea e cerută automat la primul start pe Android 13+.
+
+---
+
+## 15. Google Calendar OAuth — setup pentru fiecare developer
+
+Pentru ca Google Calendar sync să funcționeze pe calculatorul tău, trebuie să îți înregistrezi SHA-1 fingerprint-ul.
+
+**Pasul 1 — Generează SHA-1-ul tău:**
+```bash
+& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -keystore "$env:USERPROFILE\.android\debug.keystore" -list -v -alias androiddebugkey -storepass android -keypass android
+```
+Caută linia `SHA1:` și copiază valoarea.
+
+**Pasul 2 — Adaugă SHA-1-ul în Google Cloud Console:**
+1. Mergi pe **console.cloud.google.com** → proiectul `LifeOS`
+2. **Google Auth Platform → Clients**
+3. **Create OAuth client** → Android
+4. Package name: `com.example.lifeos`
+5. SHA-1: valoarea ta
+6. **Save**
+
+**Pasul 3 — Descarcă `google-services.json`:**
+- **console.firebase.google.com → LifeOS → Project Settings → General → Your apps → google-services.json**
+- Pune-l în `app/google-services.json` local
+- **Nu îl commit-a niciodată**
+
+**Pasul 4 — Adaugă-te ca Test User:**
+- **console.cloud.google.com → Google Auth Platform → Audience**
+- Adaugă emailul tău Google în lista de test users
