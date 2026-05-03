@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.repository.TransactionRepository
+import com.example.lifeos.util.CsvParseResult
 import com.example.lifeos.util.CsvParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,15 @@ sealed class ImportState {
     data class Error(val message: String) : ImportState()
 }
 
+private val REVOLUT_EXPORT_INSTRUCTIONS =
+    "Invalid Revolut CSV format.\n\n" +
+            "How to export from Revolut:\n" +
+            "1. Open Revolut app\n" +
+            "2. Go to Home → Transactions\n" +
+            "3. Tap the download icon (top right)\n" +
+            "4. Select CSV format\n" +
+            "5. Choose date range and export"
+
 class StudyBudgetViewModel(context: Context) : ViewModel() {
 
     private val repository = TransactionRepository(
@@ -43,17 +53,22 @@ class StudyBudgetViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             _importState.value = ImportState.Loading
             try {
-                val parsed = csvParser.parseRevolutCsv(inputStream)
-                if (parsed.isEmpty()) {
-                    _importState.value = ImportState.Error("No valid transactions found in file.")
-                    return@launch
+                when (val result = csvParser.parseRevolutCsv(inputStream)) {
+                    is CsvParseResult.Success -> {
+                        _importState.value = ImportState.Preview(
+                            ImportResult(
+                                imported = result.transactions.size,
+                                preview = result.transactions.take(5)
+                            )
+                        )
+                    }
+                    is CsvParseResult.InvalidFormat -> {
+                        _importState.value = ImportState.Error(REVOLUT_EXPORT_INSTRUCTIONS)
+                    }
+                    is CsvParseResult.EmptyFile -> {
+                        _importState.value = ImportState.Error("The selected file is empty.")
+                    }
                 }
-                _importState.value = ImportState.Preview(
-                    ImportResult(
-                        imported = parsed.size,
-                        preview = parsed.take(5)
-                    )
-                )
             } catch (e: Exception) {
                 _importState.value = ImportState.Error("Error reading file: ${e.message}")
             }
@@ -64,24 +79,38 @@ class StudyBudgetViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             _importState.value = ImportState.Loading
             try {
-                val parsed = csvParser.parseRevolutCsv(inputStream)
-                var imported = 0
-                var skipped = 0
+                when (val result = csvParser.parseRevolutCsv(inputStream)) {
+                    is CsvParseResult.Success -> {
+                        var imported = 0
+                        var skipped = 0
+                        val toInsert = mutableListOf<Transaction>()
 
-                val toInsert = mutableListOf<Transaction>()
-                for (transaction in parsed) {
-                    if (repository.isDuplicate(transaction.date, transaction.amount, transaction.description)) {
-                        skipped++
-                    } else {
-                        toInsert.add(transaction)
-                        imported++
+                        for (transaction in result.transactions) {
+                            if (repository.isDuplicate(
+                                    transaction.date,
+                                    transaction.amount,
+                                    transaction.description
+                                )
+                            ) {
+                                skipped++
+                            } else {
+                                toInsert.add(transaction)
+                                imported++
+                            }
+                        }
+
+                        repository.insertTransactions(toInsert)
+                        _importState.value = ImportState.Success(
+                            ImportResult(imported = imported, skipped = skipped)
+                        )
+                    }
+                    is CsvParseResult.InvalidFormat -> {
+                        _importState.value = ImportState.Error(REVOLUT_EXPORT_INSTRUCTIONS)
+                    }
+                    is CsvParseResult.EmptyFile -> {
+                        _importState.value = ImportState.Error("The selected file is empty.")
                     }
                 }
-
-                repository.insertTransactions(toInsert)
-                _importState.value = ImportState.Success(
-                    ImportResult(imported = imported, skipped = skipped)
-                )
             } catch (e: Exception) {
                 _importState.value = ImportState.Error("Import error: ${e.message}")
             }
