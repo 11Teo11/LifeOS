@@ -25,12 +25,22 @@ class OnboardingViewModel(context: Context) : ViewModel() {
     private val _isCompleted = MutableStateFlow(false)
     val isCompleted: StateFlow<Boolean> = _isCompleted.asStateFlow()
 
+    private val _isFullyCompleted = MutableStateFlow(false)
+    val isFullyCompleted: StateFlow<Boolean> = _isFullyCompleted.asStateFlow()
+
     init {
         viewModelScope.launch {
-            prefs.isOnboardingCompleted.collect {
-                _isCompleted.value = it
-            }
+            prefs.isOnboardingCompleted.collect { _isCompleted.value = it }
         }
+        viewModelScope.launch {
+            prefs.isOnboardingFullyCompleted.collect { _isFullyCompleted.value = it }
+        }
+    }
+
+    fun resetForReEntry() {
+        _currentStep.value = 0
+        _userName.value = ""
+        _monthlyBudget.value = ""
     }
 
     fun setUserName(name: String) { _userName.value = name }
@@ -52,10 +62,12 @@ class OnboardingViewModel(context: Context) : ViewModel() {
     }
 
     fun completeOnboarding() {
+        _isFullyCompleted.value = true
         viewModelScope.launch {
             prefs.saveUserName(_userName.value)
             prefs.saveMonthlyBudget(_monthlyBudget.value)
             prefs.setOnboardingCompleted()
+            prefs.setOnboardingFullyCompleted()
         }
     }
 }

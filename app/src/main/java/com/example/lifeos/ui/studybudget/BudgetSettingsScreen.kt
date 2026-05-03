@@ -15,6 +15,8 @@ import com.example.lifeos.data.db.entity.BudgetTarget
 @Composable
 fun BudgetSettingsScreen(
     viewModel: BudgetSettingsViewModel,
+    isOnboardingFullyCompleted: Boolean,
+    onCompleteOnboarding: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val budgetTargets by viewModel.budgetTargets.collectAsState(initial = emptyList())
@@ -34,6 +36,37 @@ fun BudgetSettingsScreen(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
+
+        if (!isOnboardingFullyCompleted) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Setup not complete",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "You skipped the initial setup. Complete it to set your name and monthly budget.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = onCompleteOnboarding,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Complete Setup")
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

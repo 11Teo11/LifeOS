@@ -16,6 +16,7 @@ class OnboardingPreferences(private val context: Context) {
 
     companion object {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val ONBOARDING_FULLY_COMPLETED = booleanPreferencesKey("onboarding_fully_completed")
         val USER_NAME = stringPreferencesKey("user_name")
         val MONTHLY_BUDGET = stringPreferencesKey("monthly_budget")
     }
@@ -23,11 +24,18 @@ class OnboardingPreferences(private val context: Context) {
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data
         .map { it[ONBOARDING_COMPLETED] ?: false }
 
+    val isOnboardingFullyCompleted: Flow<Boolean> = context.dataStore.data
+        .map { it[ONBOARDING_FULLY_COMPLETED] ?: false }
+
     val userName: Flow<String> = context.dataStore.data
         .map { it[USER_NAME] ?: "" }
 
     suspend fun setOnboardingCompleted() {
         context.dataStore.edit { it[ONBOARDING_COMPLETED] = true }
+    }
+
+    suspend fun setOnboardingFullyCompleted() {
+        context.dataStore.edit { it[ONBOARDING_FULLY_COMPLETED] = true }
     }
 
     suspend fun saveUserName(name: String) {
