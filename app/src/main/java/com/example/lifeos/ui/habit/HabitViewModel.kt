@@ -15,13 +15,26 @@ class HabitViewModel(private val repository: HabitRepository) : ViewModel() {
     private val _habits = MutableStateFlow<List<Habit>>(emptyList())
     val habits: StateFlow<List<Habit>> = _habits.asStateFlow()
 
+    private val _completedHabitIds = MutableStateFlow<Set<Int>>(emptySet())
+    val completedHabitIds: StateFlow<Set<Int>> = _completedHabitIds.asStateFlow()
+
     init {
         loadHabits()
+        loadTodayLogs()
     }
 
     private fun loadHabits() {
         viewModelScope.launch {
             repository.getActiveHabits().collect { _habits.value = it }
+        }
+    }
+
+    private fun loadTodayLogs() {
+        val (start, end) = getTodayRange()
+        viewModelScope.launch {
+            repository.getLogsForToday(start, end).collect { logs ->
+                _completedHabitIds.value = logs.map { it.habitId }.toSet()
+            }
         }
     }
 

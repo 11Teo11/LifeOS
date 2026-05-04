@@ -13,6 +13,7 @@ import com.example.lifeos.data.db.entity.Habit
 @Composable
 fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
     val habits by viewModel.habits.collectAsState()
+    val completedHabitIds by viewModel.completedHabitIds.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -41,6 +42,7 @@ fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
                     items(habits) { habit ->
                         HabitItem(
                             habit = habit,
+                            isChecked = habit.id in completedHabitIds,
                             onCheck = { viewModel.logHabitDone(habit.id) },
                             onDelete = { viewModel.deleteHabit(habit) }
                         )
@@ -62,14 +64,14 @@ fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HabitItem(habit: Habit, onCheck: () -> Unit, onDelete: () -> Unit) {
+fun HabitItem(habit: Habit, isChecked: Boolean, onCheck: () -> Unit, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Checkbox(checked = false, onCheckedChange = { onCheck() })
+        Checkbox(checked = isChecked, onCheckedChange = { if (!isChecked) onCheck() })
         Text(
             text = habit.name,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
