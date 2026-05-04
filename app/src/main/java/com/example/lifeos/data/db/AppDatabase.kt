@@ -13,6 +13,7 @@ import com.example.lifeos.data.db.dao.HabitDao
 import com.example.lifeos.data.db.entity.HabitLog
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.dao.DailyCheckInDao
 import com.example.lifeos.data.db.entity.AcademicEvent
 
 @Database(
@@ -33,8 +34,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun budgetTargetDao(): BudgetTargetDao
     abstract fun academicEventDao(): AcademicEventDao
-    // TODO: DAO for DailyCheckIn
-//    abstract fun dailyCheckInDao(): DailyCheckInDao
+
+    abstract fun dailyCheckInDao(): DailyCheckInDao
 
     companion object {
         @Volatile
