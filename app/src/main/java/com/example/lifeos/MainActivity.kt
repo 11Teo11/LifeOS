@@ -105,15 +105,19 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val onboardingViewModel = remember { OnboardingViewModel(context) }
                 val isOnboardingCompleted by onboardingViewModel.isCompleted.collectAsState()
+                val isOnboardingFullyCompleted by onboardingViewModel.isFullyCompleted.collectAsState()
                 val studyBudgetViewModel = remember { StudyBudgetViewModel(context) }
                 val budgetSettingsViewModel = remember { BudgetSettingsViewModel(context) }
                 val calendarViewModel = remember { CalendarViewModel(context) }
                 var selectedTab by remember { mutableIntStateOf(0) }
+                var showOnboardingFromSettings by remember { mutableStateOf(false) }
 
-                if (!isOnboardingCompleted) {
+                if (!isOnboardingCompleted || showOnboardingFromSettings) {
                     OnboardingScreen(
                         viewModel = onboardingViewModel,
-                        onOnboardingComplete = { }
+                        calendarViewModel = calendarViewModel,
+                        onOnboardingComplete = { showOnboardingFromSettings = false },
+                        isReEntry = showOnboardingFromSettings
                     )
                 } else {
                     Scaffold(
@@ -162,6 +166,11 @@ class MainActivity : ComponentActivity() {
                             )
                             3 -> BudgetSettingsScreen(
                                 viewModel = budgetSettingsViewModel,
+                                isOnboardingFullyCompleted = isOnboardingFullyCompleted,
+                                onCompleteOnboarding = {
+                                    onboardingViewModel.resetForReEntry()
+                                    showOnboardingFromSettings = true
+                                },
                                 modifier = Modifier.padding(innerPadding)
                             )
                         }

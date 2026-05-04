@@ -14,12 +14,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.db.entity.Transaction
+import com.example.lifeos.data.db.entity.BudgetTarget
 
 @Composable
 fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val importState by viewModel.importState.collectAsState()
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
+    val totalBudgetTarget by viewModel.totalBudgetTarget.collectAsState(initial = null)
+    val totalSpent by viewModel.totalSpent.collectAsState(initial = 0.0)
 
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -43,6 +46,11 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
+
+        totalBudgetTarget?.let { target ->
+            Spacer(modifier = Modifier.height(16.dp))
+            BudgetDashboardCard(target = target, totalSpent = totalSpent)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -164,6 +172,71 @@ fun PreviewSection(
                 OutlinedButton(onClick = onCancel) { Text("Cancel") }
                 Button(onClick = onConfirm) { Text("Import all") }
             }
+        }
+    }
+}
+
+@Composable
+fun BudgetDashboardCard(target: BudgetTarget, totalSpent: Double) {
+    val remaining = target.monthlyLimit - totalSpent
+    val progress = (totalSpent / target.monthlyLimit).coerceIn(0.0, 1.0).toFloat()
+    val isOverBudget = remaining < 0
+    val progressColor = if (progress >= 0.8f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Monthly Budget",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Spent",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${"%.2f".format(totalSpent)} RON",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Budget",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${"%.2f".format(target.monthlyLimit)} RON",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = progressColor
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = if (isOverBudget)
+                    "${"%.2f".format(-remaining)} RON over budget"
+                else
+                    "${"%.2f".format(remaining)} RON remaining",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isOverBudget) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
