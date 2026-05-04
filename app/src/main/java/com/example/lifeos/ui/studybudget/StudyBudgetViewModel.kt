@@ -6,14 +6,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.lifeos.data.db.AppDatabase
+import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.repository.TransactionRepository
 import com.example.lifeos.util.CsvParseResult
 import com.example.lifeos.util.CsvParser
 import com.example.lifeos.worker.BudgetCheckWorker
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
 
@@ -51,6 +54,14 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
 
     val transactions = repository.allTransactions
+
+    val totalBudgetTarget: Flow<BudgetTarget?> = AppDatabase.getDatabase(context)
+        .budgetTargetDao()
+        .getAllBudgetTargets()
+        .map { targets -> targets.find { it.category == "💰 Total" } }
+
+    val totalSpent: Flow<Double> = transactions
+        .map { list -> list.filter { it.amount < 0 }.sumOf { Math.abs(it.amount) } }
 
     fun previewCsv(inputStream: InputStream) {
         viewModelScope.launch {

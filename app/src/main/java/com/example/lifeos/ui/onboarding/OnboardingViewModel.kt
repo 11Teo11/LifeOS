@@ -3,7 +3,10 @@ package com.example.lifeos.ui.onboarding
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifeos.data.db.AppDatabase
+import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.onboarding.OnboardingPreferences
+import com.example.lifeos.data.repository.BudgetTargetRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +15,10 @@ import kotlinx.coroutines.launch
 class OnboardingViewModel(context: Context) : ViewModel() {
 
     private val prefs = OnboardingPreferences(context)
+    private val budgetTargetRepository = BudgetTargetRepository(
+        AppDatabase.getDatabase(context).budgetTargetDao(),
+        AppDatabase.getDatabase(context).transactionDao()
+    )
 
     private val _currentStep = MutableStateFlow(0)
     val currentStep: StateFlow<Int> = _currentStep.asStateFlow()
@@ -64,6 +71,12 @@ class OnboardingViewModel(context: Context) : ViewModel() {
     fun completeOnboarding() {
         _isFullyCompleted.value = true
         viewModelScope.launch {
+            val amount = _monthlyBudget.value.toDoubleOrNull()
+            if (amount != null && amount > 0) {
+                budgetTargetRepository.insertOrUpdate(
+                    BudgetTarget(category = "💰 Total", monthlyLimit = amount)
+                )
+            }
             prefs.saveUserName(_userName.value)
             prefs.saveMonthlyBudget(_monthlyBudget.value)
             prefs.setOnboardingCompleted()
