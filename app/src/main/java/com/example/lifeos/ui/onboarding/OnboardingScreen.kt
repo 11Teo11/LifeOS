@@ -1,5 +1,8 @@
 package com.example.lifeos.ui.onboarding
 
+import android.accounts.AccountManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -9,13 +12,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.lifeos.ui.studybudget.CalendarState
+import com.example.lifeos.ui.studybudget.CalendarViewModel
 
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
+    calendarViewModel: CalendarViewModel,
     onOnboardingComplete: () -> Unit,
     isReEntry: Boolean = false
 ) {
+    val accountPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+        if (accountName != null) calendarViewModel.syncCalendar(accountName)
+    }
+
+    val calendarState by calendarViewModel.calendarState.collectAsState()
+
+    LaunchedEffect(calendarState) {
+        if (calendarState is CalendarState.NeedsConsent) {
+            accountPickerLauncher.launch((calendarState as CalendarState.NeedsConsent).intent)
+        }
+    }
     val currentStep by viewModel.currentStep.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val monthlyBudget by viewModel.monthlyBudget.collectAsState()
@@ -71,7 +91,10 @@ fun OnboardingScreen(
                 },
                 showError = showNameError
             )
-            1 -> StepCalendar(onSkipCalendar = { viewModel.nextStep() })
+            1 -> StepCalendar(
+                onConnectCalendar = { accountPickerLauncher.launch(calendarViewModel.getAccountPickerIntent()) },
+                onSkipCalendar = { viewModel.nextStep() }
+            )
             2 -> StepBudget(
                 budget = monthlyBudget,
                 onBudgetChange = {
@@ -148,7 +171,7 @@ fun StepProfile(userName: String, onNameChange: (String) -> Unit, showError: Boo
 }
 
 @Composable
-fun StepCalendar(onSkipCalendar: () -> Unit) {
+fun StepCalendar(onConnectCalendar: () -> Unit, onSkipCalendar: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "Connect Google Calendar",
@@ -169,7 +192,7 @@ fun StepCalendar(onSkipCalendar: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(24.dp))
-        OutlinedButton(onClick = { /* Teo implements OAuth here */ }) {
+        OutlinedButton(onClick = onConnectCalendar) {
             Text("Connect Google Calendar")
         }
         Spacer(modifier = Modifier.height(8.dp))

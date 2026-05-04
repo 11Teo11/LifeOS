@@ -61,7 +61,7 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
         .map { targets -> targets.find { it.category == "💰 Total" } }
 
     val totalSpent: Flow<Double> = transactions
-        .map { list -> list.filter { it.amount < 0 }.sumOf { Math.abs(it.amount) } }
+        .map { list -> list.sumOf { Math.abs(it.amount) } }
 
     fun previewCsv(inputStream: InputStream) {
         viewModelScope.launch {

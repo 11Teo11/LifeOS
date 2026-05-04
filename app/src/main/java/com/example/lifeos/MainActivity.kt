@@ -115,6 +115,7 @@ class MainActivity : ComponentActivity() {
                 if (!isOnboardingCompleted || showOnboardingFromSettings) {
                     OnboardingScreen(
                         viewModel = onboardingViewModel,
+                        calendarViewModel = calendarViewModel,
                         onOnboardingComplete = { showOnboardingFromSettings = false },
                         isReEntry = showOnboardingFromSettings
                     )

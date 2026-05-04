@@ -39,7 +39,7 @@ class CsvParser {
             for (row in dataRows) {
                 if (row.size < 8) continue
                 try {
-                    val date = row[0].trim()
+                    val date = row[2].trim()
                     val description = row[4].trim()
                     val amount = row[5].trim().toDoubleOrNull() ?: continue
                     val currency = row[7].trim()
