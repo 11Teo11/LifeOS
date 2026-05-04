@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,6 +29,11 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
 
     val history: StateFlow<List<DailyCheckIn>> = repository
         .getLast14Days(LocalDate.now().minusDays(13).toString())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val chartData: StateFlow<List<DailyCheckIn>> = repository
+        .getLast14Days(LocalDate.now().minusDays(6).toString())
+        .map { list -> list.sortedBy { it.date } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setSleepHours(hours: Float) = _uiState.update { it.copy(sleepHours = hours) }
