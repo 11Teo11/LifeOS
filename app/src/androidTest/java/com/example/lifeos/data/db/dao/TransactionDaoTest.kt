@@ -81,9 +81,11 @@ class TransactionDaoTest {
 
     @Test
     fun insertAll_withIgnoreConflict_doesNotInsertDuplicates() = runTest {
-        val tx = transaction(date = "2024-01-15", description = "Coffee", amount = -5.0)
+        // id must be explicit and non-zero — when id=0 Room auto-generates a new id on every
+        // insert, so two inserts never conflict. IGNORE only fires when the same explicit id collides.
+        val tx = transaction(date = "2024-01-15", description = "Coffee", amount = -5.0).copy(id = 42L)
         dao.insertAll(listOf(tx))
-        dao.insertAll(listOf(tx))  // same object → same primary key → ignored
+        dao.insertAll(listOf(tx))  // same id=42 → conflict → second insert ignored
 
         dao.getAllTransactions().test {
             val result = awaitItem()
