@@ -19,7 +19,9 @@ data class CheckInUiState(
     val energyLevel: Int = 5,
     val stressLevel: Int = 5,
     val selectedSymptoms: Set<String> = emptySet(),
-    val saved: Boolean = false
+    val selectedDate: LocalDate = LocalDate.now(),
+    val saved: Boolean = false,
+    val duplicateError: Boolean = false
 )
 
 class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewModel() {
@@ -40,6 +42,9 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
     fun setEnergyLevel(level: Int) = _uiState.update { it.copy(energyLevel = level) }
     fun setStressLevel(level: Int) = _uiState.update { it.copy(stressLevel = level) }
 
+    fun setDate(date: LocalDate) =
+        _uiState.update { it.copy(selectedDate = date, duplicateError = false, saved = false) }
+
     fun toggleSymptom(symptom: String) {
         _uiState.update { state ->
             val updated = state.selectedSymptoms.toMutableSet()
@@ -51,9 +56,16 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
     fun saveCheckIn() {
         viewModelScope.launch {
             val s = _uiState.value
+            val dateStr = s.selectedDate.toString()
+
+            if (repository.getCheckInForDate(dateStr) != null) {
+                _uiState.update { it.copy(duplicateError = true) }
+                return@launch
+            }
+
             repository.insert(
                 DailyCheckIn(
-                    date = LocalDate.now().toString(),
+                    date = dateStr,
                     timestamp = System.currentTimeMillis(),
                     sleepHours = s.sleepHours,
                     energyLevel = s.energyLevel,
@@ -61,7 +73,7 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
                     symptoms = s.selectedSymptoms.joinToString(",")
                 )
             )
-            _uiState.update { it.copy(saved = true) }
+            _uiState.update { it.copy(saved = true, duplicateError = false) }
         }
     }
 }
