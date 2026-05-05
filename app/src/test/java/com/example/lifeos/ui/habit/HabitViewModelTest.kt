@@ -24,6 +24,7 @@ class HabitViewModelTest {
         Dispatchers.setMain(testDispatcher)
         val mockRepo = mockk<HabitRepository> {
             every { getActiveHabits() } returns flowOf(emptyList())
+            every { getLogsForToday(any(), any()) } returns flowOf(emptyList())
         }
         viewModel = HabitViewModel(mockRepo)
     }
