@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.entity.PatternAlert
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -75,9 +76,10 @@ fun CheckInScreen(
     viewModel: CheckInViewModel,
     modifier: Modifier = Modifier
 ) {
-    val uiState  by viewModel.uiState.collectAsState()
-    val history  by viewModel.history.collectAsState()
+    val uiState   by viewModel.uiState.collectAsState()
+    val history   by viewModel.history.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
+    val latestAlert by viewModel.latestAlert.collectAsState()
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
@@ -87,6 +89,16 @@ fun CheckInScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
+
+        // Pattern alert card — only shown when a pattern was detected
+        item {
+            latestAlert?.let { alert ->
+                if (alert.hasPattern) {
+                    PatternAlertCard(alert = alert)
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
 
         item {
             Text("Wellness Trends", style = MaterialTheme.typography.headlineSmall)
@@ -252,6 +264,48 @@ fun CheckInScreen(
 }
 
 @Composable
+private fun PatternAlertCard(alert: PatternAlert) {
+    val containerColor = when (alert.severity) {
+        "high"   -> Color(0xFFFFCDD2)
+        "medium" -> Color(0xFFFFE0B2)
+        else     -> Color(0xFFFFF9C4)
+    }
+    val icon = when (alert.patternType) {
+        "sleep"  -> "😴"
+        "energy" -> "⚡"
+        "stress" -> "😰"
+        else     -> "⚠️"
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "$icon Pattern detected: ${alert.patternType}",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = alert.severity.uppercase(),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            if (alert.description.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = alert.description,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun WellnessTrendsCard(data: List<DailyCheckIn>) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -329,7 +383,9 @@ private fun WellnessLineChart(data: List<DailyCheckIn>, modifier: Modifier = Mod
             val energyColour = if (entry.energyLevel < 4) WarningRed else EnergyTeal
             if (entry.energyLevel < 4) drawCircle(color = WarningRed.copy(alpha = 0.25f), radius = 9.dp.toPx(), center = Offset(x, energyY(entry.energyLevel)))
             drawCircle(color = energyColour, radius = 5.dp.toPx(), center = Offset(x, energyY(entry.energyLevel)))
-            val dayLabel = try { LocalDate.parse(entry.date).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) } catch (e: Exception) { entry.date.takeLast(2) }
+            val dayLabel = try {
+                LocalDate.parse(entry.date).dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+            } catch (e: Exception) { entry.date.takeLast(2) }
             drawContext.canvas.nativeCanvas.drawText(dayLabel, x, size.height - 2.dp.toPx(), xLabelPaint)
         }
     }

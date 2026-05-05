@@ -78,6 +78,9 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
 
+    // OkHttp (Ollama HTTP client)
+    implementation(libs.okhttp)
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-analytics")

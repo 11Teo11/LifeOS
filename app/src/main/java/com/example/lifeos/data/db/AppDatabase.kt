@@ -15,6 +15,8 @@ import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
 import com.example.lifeos.data.db.dao.DailyCheckInDao
 import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.PatternAlert
+import com.example.lifeos.data.db.dao.PatternAlertDao
 
 @Database(
     entities = [
@@ -23,9 +25,10 @@ import com.example.lifeos.data.db.entity.AcademicEvent
         Habit::class,
         HabitLog::class,
         DailyCheckIn::class,
-        AcademicEvent::class
+        AcademicEvent::class,
+        PatternAlert::class
     ],
-    version = 4,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun academicEventDao(): AcademicEventDao
 
     abstract fun dailyCheckInDao(): DailyCheckInDao
+    abstract fun patternAlertDao(): PatternAlertDao
 
     companion object {
         @Volatile

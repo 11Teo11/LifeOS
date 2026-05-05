@@ -1,9 +1,15 @@
 package com.example.lifeos.ui.checkin
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.entity.PatternAlert
 import com.example.lifeos.data.repository.DailyCheckInRepository
+import com.example.lifeos.data.repository.PatternAlertRepository
+import com.example.lifeos.worker.PatternDetectorWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +30,11 @@ data class CheckInUiState(
     val duplicateError: Boolean = false
 )
 
-class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewModel() {
+class CheckInViewModel(
+    private val repository: DailyCheckInRepository,
+    private val alertRepository: PatternAlertRepository,
+    private val context: Context
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckInUiState())
     val uiState: StateFlow<CheckInUiState> = _uiState.asStateFlow()
@@ -37,6 +47,10 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
         .getLast14Days(LocalDate.now().minusDays(6).toString())
         .map { list -> list.sortedBy { it.date } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val latestAlert: StateFlow<PatternAlert?> = alertRepository
+        .getLatest()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun setSleepHours(hours: Float) = _uiState.update { it.copy(sleepHours = hours) }
     fun setEnergyLevel(level: Int) = _uiState.update { it.copy(energyLevel = level) }
@@ -74,6 +88,9 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
                 )
             )
             _uiState.update { it.copy(saved = true, duplicateError = false) }
+
+            val request = OneTimeWorkRequestBuilder<PatternDetectorWorker>().build()
+            WorkManager.getInstance(context).enqueue(request)
         }
     }
 }

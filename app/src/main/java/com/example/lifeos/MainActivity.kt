@@ -41,6 +41,7 @@ import com.example.lifeos.worker.CheckInReminderWorker
 import com.example.lifeos.worker.HabitResetWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import com.example.lifeos.data.repository.PatternAlertRepository
 
 class MainActivity : ComponentActivity() {
 
@@ -131,10 +132,11 @@ class MainActivity : ComponentActivity() {
         })[HabitViewModel::class.java]
 
         val checkInRepository = DailyCheckInRepository(database.dailyCheckInDao())
+        val patternAlertRepository = PatternAlertRepository(database.patternAlertDao())
         checkInViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                return CheckInViewModel(checkInRepository) as T
+                return CheckInViewModel(checkInRepository, patternAlertRepository, applicationContext) as T
             }
         })[CheckInViewModel::class.java]
 
