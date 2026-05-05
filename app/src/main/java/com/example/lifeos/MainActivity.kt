@@ -42,6 +42,7 @@ import com.example.lifeos.worker.HabitResetWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import com.example.lifeos.data.repository.PatternAlertRepository
+import com.example.lifeos.worker.EveningReportWorker
 
 class MainActivity : ComponentActivity() {
 
@@ -103,6 +104,28 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun scheduleEveningReport() {
+        val now = Calendar.getInstance()
+        val target = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 21)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(now)) add(Calendar.DAY_OF_MONTH, 1)
+        }
+        val delay = target.timeInMillis - now.timeInMillis
+
+        val reportRequest = PeriodicWorkRequestBuilder<EveningReportWorker>(1, TimeUnit.DAYS)
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "evening_report",
+            ExistingPeriodicWorkPolicy.KEEP,
+            reportRequest
+        )
+    }
+
     private fun requestNotificationPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(
@@ -119,6 +142,7 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.createNotificationChannel(this)
         scheduleBudgetCheck()
         scheduleCheckInReminder()
+        scheduleEveningReport()
         requestNotificationPermission()
 
         val database = AppDatabase.getDatabase(this)
