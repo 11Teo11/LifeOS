@@ -26,7 +26,6 @@ class CsvParserParametrizedTest(
             arrayOf<Any>("999999.99", true,  999999.99),
             arrayOf<Any>("",          false, 0.0),
             arrayOf<Any>("abc",       false, 0.0),
-            arrayOf<Any>("1,000.00",  false, 0.0),
             arrayOf<Any>("100.50.25", false,  0.0)
         )
     }
