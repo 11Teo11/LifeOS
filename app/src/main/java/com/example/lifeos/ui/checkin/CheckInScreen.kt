@@ -392,13 +392,7 @@ private fun WellnessLineChart(data: List<DailyCheckIn>, modifier: Modifier = Mod
 }
 
 @Composable
-private fun SliderRow(
-    label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    displayValue: String,
-    onValueChange: (Float) -> Unit
-) {
+private fun SliderRow(label: String, value: Float, valueRange: ClosedFloatingPointRange<Float>, displayValue: String, onValueChange: (Float) -> Unit) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.titleMedium)
@@ -420,9 +414,7 @@ private fun CheckInHistoryCard(entry: DailyCheckIn) {
                 Text("Stress: ${entry.stressLevel}/10")
             }
             if (entry.symptoms.isNotBlank()) {
-                val labels = entry.symptoms.split(",")
-                    .mapNotNull { SYMPTOM_LABELS[it.trim()] }
-                    .joinToString(", ")
+                val labels = entry.symptoms.split(",").mapNotNull { SYMPTOM_LABELS[it.trim()] }.joinToString(", ")
                 Text("Symptoms: $labels", style = MaterialTheme.typography.bodySmall)
             }
         }
