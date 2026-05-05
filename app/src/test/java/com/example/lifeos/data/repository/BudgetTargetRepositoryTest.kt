@@ -25,6 +25,7 @@ class BudgetTargetRepositoryTest {
     fun setUp() {
         budgetTargetDao = mockk()
         transactionDao = mockk()
+        every { budgetTargetDao.getAllBudgetTargets() } returns flowOf(emptyList())
         repository = BudgetTargetRepository(budgetTargetDao, transactionDao)
     }
 
