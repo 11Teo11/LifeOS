@@ -17,4 +17,7 @@ interface DailyCheckInDao {
 
     @Query("SELECT * FROM daily_checkins WHERE date >= :startDate ORDER BY date DESC")
     fun getCheckInsFrom(startDate: String): Flow<List<DailyCheckIn>>
+
+    @Query("SELECT * FROM daily_checkins WHERE date >= :startDate ORDER BY date DESC")
+    suspend fun getCheckInsFromOnce(startDate: String): List<DailyCheckIn>
 }
