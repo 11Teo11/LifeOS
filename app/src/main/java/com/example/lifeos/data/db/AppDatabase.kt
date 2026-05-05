@@ -31,7 +31,7 @@ import com.example.lifeos.data.db.dao.AgentInsightDao
         TransactionCorrection::class,
         AgentInsight::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,7 +40,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun budgetTargetDao(): BudgetTargetDao
     abstract fun academicEventDao(): AcademicEventDao
-
     abstract fun dailyCheckInDao(): DailyCheckInDao
 
     abstract fun transactionCorrectionDao(): TransactionCorrectionDao

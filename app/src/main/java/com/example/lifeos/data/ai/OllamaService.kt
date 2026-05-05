@@ -1,5 +1,6 @@
 package com.example.lifeos.data.ai
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -12,7 +13,6 @@ import java.net.URL
 class OllamaService {
 
     companion object {
-        // 10.0.2.2 = IP-ul laptopului vazut din emulator
         private const val BASE_URL = "http://10.0.2.2:11434"
         private const val MODEL = "mistral"
     }
@@ -20,10 +20,13 @@ class OllamaService {
     suspend fun classify(transactionDescription: String, amount: Double): String {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("OllamaService", "Classifying: $transactionDescription")
                 val prompt = buildPrompt(transactionDescription, amount)
                 val response = sendRequest(prompt)
+                Log.d("OllamaService", "Category: $response")
                 parseCategory(response)
             } catch (e: Exception) {
+                Log.e("OllamaService", "Error: ${e.message}")
                 "📦 Other"
             }
         }
@@ -42,6 +45,7 @@ class OllamaService {
     }
 
     private fun sendRequest(prompt: String): String {
+        Log.d("OllamaService", "Sending request to Ollama...")
         val url = URL("$BASE_URL/api/generate")
         val connection = url.openConnection() as HttpURLConnection
 
@@ -63,6 +67,7 @@ class OllamaService {
             it.readText()
         }
 
+        Log.d("OllamaService", "Response: $response")
         return JSONObject(response).getString("response").trim()
     }
 

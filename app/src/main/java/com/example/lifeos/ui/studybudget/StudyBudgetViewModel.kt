@@ -12,6 +12,7 @@ import com.example.lifeos.data.repository.TransactionRepository
 import com.example.lifeos.util.CsvParseResult
 import com.example.lifeos.util.CsvParser
 import com.example.lifeos.worker.BudgetCheckWorker
+import com.example.lifeos.data.ai.Agent2Classifier
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 data class ImportResult(
     val imported: Int = 0,
@@ -49,7 +52,7 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
         AppDatabase.getDatabase(context).transactionDao()
     )
     private val csvParser = CsvParser()
-
+    private val agent2Classifier = Agent2Classifier(context)
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
 
@@ -113,9 +116,11 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
                             }
                         }
 
-                        repository.insertTransactions(toInsert)
+                        // Clasificare Agent 2
+                        val classified = agent2Classifier.classifyTransactions(toInsert)
+                        repository.insertTransactions(classified)
 
-                        // Trigger budget check immediately after import
+                        // Trigger budget check
                         val budgetCheckRequest = OneTimeWorkRequestBuilder<BudgetCheckWorker>()
                             .build()
                         WorkManager.getInstance(context).enqueue(budgetCheckRequest)
@@ -136,6 +141,34 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
             }
         }
     }
+
+    fun correctCategory(transaction: Transaction, newCategory: String) {
+        viewModelScope.launch {
+            agent2Classifier.saveCorrection(transaction.description, newCategory)
+        }
+    }
+
+    fun reclassifyAll() {
+        viewModelScope.launch {
+            _importState.value = ImportState.Loading
+            try {
+                val allTransactions = withContext(Dispatchers.IO) {
+                    AppDatabase.getDatabase(context).transactionDao().getAllTransactionsOnce()
+                }
+                val notCorrected = allTransactions.filter { !it.isManuallyCorrected }
+                val classified = agent2Classifier.classifyTransactions(notCorrected)
+                withContext(Dispatchers.IO) {
+                    classified.forEach {
+                        AppDatabase.getDatabase(context).transactionDao().updateTransaction(it)
+                    }
+                }
+                _importState.value = ImportState.Idle
+            } catch (e: Exception) {
+                _importState.value = ImportState.Idle
+            }
+        }
+    }
+
 
     fun resetState() {
         _importState.value = ImportState.Idle
