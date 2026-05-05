@@ -8,8 +8,9 @@ data class DailyCheckIn(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val date: String,
-    val energyLevel: Int,
+    val timestamp: Long,
     val sleepHours: Float,
-    val mood: Int,
-    val notes: String = ""
+    val energyLevel: Int,
+    val stressLevel: Int,
+    val symptoms: String = ""
 )

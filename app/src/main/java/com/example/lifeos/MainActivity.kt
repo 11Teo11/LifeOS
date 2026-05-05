@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -19,7 +20,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.*
 import com.example.lifeos.data.db.AppDatabase
+import com.example.lifeos.data.repository.DailyCheckInRepository
 import com.example.lifeos.data.repository.HabitRepository
+import com.example.lifeos.ui.checkin.CheckInScreen
+import com.example.lifeos.ui.checkin.CheckInViewModel
 import com.example.lifeos.ui.habit.HabitScreen
 import com.example.lifeos.ui.habit.HabitViewModel
 import com.example.lifeos.ui.onboarding.OnboardingScreen
@@ -33,6 +37,7 @@ import com.example.lifeos.ui.studybudget.StudyBudgetViewModel
 import com.example.lifeos.ui.theme.LifeOSTheme
 import com.example.lifeos.util.NotificationHelper
 import com.example.lifeos.worker.BudgetCheckWorker
+import com.example.lifeos.worker.CheckInReminderWorker
 import com.example.lifeos.worker.HabitResetWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -40,6 +45,7 @@ import java.util.concurrent.TimeUnit
 class MainActivity : ComponentActivity() {
 
     private lateinit var habitViewModel: HabitViewModel
+    private lateinit var checkInViewModel: CheckInViewModel
 
     private fun scheduleHabitReset() {
         val now = Calendar.getInstance()
@@ -74,6 +80,28 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun scheduleCheckInReminder() {
+        val now = Calendar.getInstance()
+        val target = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(now)) add(Calendar.DAY_OF_MONTH, 1)
+        }
+        val delay = target.timeInMillis - now.timeInMillis
+
+        val reminderRequest = PeriodicWorkRequestBuilder<CheckInReminderWorker>(1, TimeUnit.DAYS)
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "checkin_reminder",
+            ExistingPeriodicWorkPolicy.KEEP,
+            reminderRequest
+        )
+    }
+
     private fun requestNotificationPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(
@@ -89,9 +117,11 @@ class MainActivity : ComponentActivity() {
         scheduleHabitReset()
         NotificationHelper.createNotificationChannel(this)
         scheduleBudgetCheck()
+        scheduleCheckInReminder()
         requestNotificationPermission()
 
         val database = AppDatabase.getDatabase(this)
+
         val repository = HabitRepository(database.habitDao())
         habitViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -99,6 +129,14 @@ class MainActivity : ComponentActivity() {
                 return HabitViewModel(repository) as T
             }
         })[HabitViewModel::class.java]
+
+        val checkInRepository = DailyCheckInRepository(database.dailyCheckInDao())
+        checkInViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return CheckInViewModel(checkInRepository) as T
+            }
+        })[CheckInViewModel::class.java]
 
         setContent {
             LifeOSTheme {
@@ -145,6 +183,12 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 3,
                                     onClick = { selectedTab = 3 },
+                                    icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Check-In") },
+                                    label = { Text("Check-In") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 4,
+                                    onClick = { selectedTab = 4 },
                                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
                                     label = { Text("Settings") }
                                 )
@@ -164,7 +208,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = calendarViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
-                            3 -> BudgetSettingsScreen(
+                            3 -> CheckInScreen(
+                                viewModel = checkInViewModel,
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                            4 -> BudgetSettingsScreen(
                                 viewModel = budgetSettingsViewModel,
                                 isOnboardingFullyCompleted = isOnboardingFullyCompleted,
                                 onCompleteOnboarding = {

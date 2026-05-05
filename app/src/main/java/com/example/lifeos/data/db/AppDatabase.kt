@@ -14,6 +14,7 @@ import com.example.lifeos.data.db.dao.TransactionCorrectionDao
 import com.example.lifeos.data.db.entity.HabitLog
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.dao.DailyCheckInDao
 import com.example.lifeos.data.db.entity.AcademicEvent
 import com.example.lifeos.data.db.entity.TransactionCorrection
 import com.example.lifeos.data.db.entity.AgentInsight
@@ -39,8 +40,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun budgetTargetDao(): BudgetTargetDao
     abstract fun academicEventDao(): AcademicEventDao
-    // TODO: DAO for DailyCheckIn
-//    abstract fun dailyCheckInDao(): DailyCheckInDao
+
+    abstract fun dailyCheckInDao(): DailyCheckInDao
 
     abstract fun transactionCorrectionDao(): TransactionCorrectionDao
     abstract fun agentInsightDao(): AgentInsightDao
