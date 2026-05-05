@@ -36,115 +36,116 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "StudyBudget",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-
-        totalBudgetTarget?.let { target ->
-            Spacer(modifier = Modifier.height(16.dp))
-            BudgetDashboardCard(target = target, totalSpent = totalSpent)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { filePickerLauncher.launch("*/*") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Import Revolut CSV")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        when (val state = importState) {
-            is ImportState.Idle -> {
-                if (transactions.isEmpty()) {
-                    Text(
-                        text = "No transactions yet. Import a Revolut CSV to get started.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            is ImportState.Loading -> {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is ImportState.Preview -> {
-                PreviewSection(
-                    result = state.result,
-                    onConfirm = {
-                        selectedUri?.let {
-                            val inputStream = context.contentResolver.openInputStream(it)
-                            inputStream?.let { stream -> viewModel.confirmImport(stream) }
-                        }
-                    },
-                    onCancel = { viewModel.resetState() }
-                )
-            }
-
-            is ImportState.Success -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Import successful!", fontWeight = FontWeight.Bold)
-                        Text("Imported: ${state.result.imported} transactions")
-                        Text("Skipped (duplicates): ${state.result.skipped}")
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(onClick = { viewModel.resetState() }) {
-                    Text("Import another file")
-                }
-            }
-
-            is ImportState.Error -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = state.message,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(onClick = { viewModel.resetState() }) {
-                    Text("Try again")
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (transactions.isNotEmpty()) {
+        item {
             Text(
-                text = "Transactions (${transactions.size})",
-                style = MaterialTheme.typography.titleMedium,
+                text = "StudyBudget",
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn {
-                items(transactions) { transaction ->
-                    TransactionItem(transaction = transaction)
+        }
+
+        totalBudgetTarget?.let { target ->
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                BudgetDashboardCard(target = target, totalSpent = totalSpent)
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { filePickerLauncher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Import Revolut CSV")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        item {
+            when (val state = importState) {
+                is ImportState.Idle -> {
+                    if (transactions.isEmpty()) {
+                        Text(
+                            text = "No transactions yet. Import a Revolut CSV to get started.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
+                is ImportState.Loading -> {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is ImportState.Preview -> {
+                    PreviewSection(
+                        result = state.result,
+                        onConfirm = {
+                            selectedUri?.let {
+                                val inputStream = context.contentResolver.openInputStream(it)
+                                inputStream?.let { stream -> viewModel.confirmImport(stream) }
+                            }
+                        },
+                        onCancel = { viewModel.resetState() }
+                    )
+                }
+                is ImportState.Success -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Import successful!", fontWeight = FontWeight.Bold)
+                            Text("Imported: ${state.result.imported} transactions")
+                            Text("Skipped (duplicates): ${state.result.skipped}")
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { viewModel.resetState() }) {
+                        Text("Import another file")
+                    }
+                }
+                is ImportState.Error -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = state.message,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { viewModel.resetState() }) {
+                        Text("Try again")
+                    }
+                }
+            }
+        }
+
+        if (transactions.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Transactions (${transactions.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            items(transactions) { transaction ->
+                TransactionItem(transaction = transaction)
             }
         }
     }
