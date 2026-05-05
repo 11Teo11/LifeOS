@@ -10,10 +10,14 @@ import com.example.lifeos.data.db.dao.TransactionDao
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.db.entity.Habit
 import com.example.lifeos.data.db.dao.HabitDao
+import com.example.lifeos.data.db.dao.TransactionCorrectionDao
 import com.example.lifeos.data.db.entity.HabitLog
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
 import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.TransactionCorrection
+import com.example.lifeos.data.db.entity.AgentInsight
+import com.example.lifeos.data.db.dao.AgentInsightDao
 
 @Database(
     entities = [
@@ -22,9 +26,11 @@ import com.example.lifeos.data.db.entity.AcademicEvent
         Habit::class,
         HabitLog::class,
         DailyCheckIn::class,
-        AcademicEvent::class
+        AcademicEvent::class,
+        TransactionCorrection::class,
+        AgentInsight::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,6 +42,8 @@ abstract class AppDatabase : RoomDatabase() {
     // TODO: DAO for DailyCheckIn
 //    abstract fun dailyCheckInDao(): DailyCheckInDao
 
+    abstract fun transactionCorrectionDao(): TransactionCorrectionDao
+    abstract fun agentInsightDao(): AgentInsightDao
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
