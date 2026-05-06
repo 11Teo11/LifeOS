@@ -35,6 +35,7 @@ class OnboardingViewModel(context: Context) : ViewModel() {
     private val _isFullyCompleted = MutableStateFlow(false)
     val isFullyCompleted: StateFlow<Boolean> = _isFullyCompleted.asStateFlow()
 
+
     init {
         viewModelScope.launch {
             prefs.isOnboardingCompleted.collect { _isCompleted.value = it }

@@ -1,9 +1,15 @@
 package com.example.lifeos.ui.checkin
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.lifeos.data.db.entity.DailyCheckIn
+import com.example.lifeos.data.db.entity.PatternAlert
 import com.example.lifeos.data.repository.DailyCheckInRepository
+import com.example.lifeos.data.repository.PatternAlertRepository
+import com.example.lifeos.worker.PatternDetectorWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,10 +25,16 @@ data class CheckInUiState(
     val energyLevel: Int = 5,
     val stressLevel: Int = 5,
     val selectedSymptoms: Set<String> = emptySet(),
-    val saved: Boolean = false
+    val selectedDate: LocalDate = LocalDate.now(),
+    val saved: Boolean = false,
+    val duplicateError: Boolean = false
 )
 
-class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewModel() {
+class CheckInViewModel(
+    private val repository: DailyCheckInRepository,
+    private val alertRepository: PatternAlertRepository,
+    private val context: Context
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckInUiState())
     val uiState: StateFlow<CheckInUiState> = _uiState.asStateFlow()
@@ -36,9 +48,16 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
         .map { list -> list.sortedBy { it.date } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val latestAlert: StateFlow<PatternAlert?> = alertRepository
+        .getLatest()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun setSleepHours(hours: Float) = _uiState.update { it.copy(sleepHours = hours) }
     fun setEnergyLevel(level: Int) = _uiState.update { it.copy(energyLevel = level) }
     fun setStressLevel(level: Int) = _uiState.update { it.copy(stressLevel = level) }
+
+    fun setDate(date: LocalDate) =
+        _uiState.update { it.copy(selectedDate = date, duplicateError = false, saved = false) }
 
     fun toggleSymptom(symptom: String) {
         _uiState.update { state ->
@@ -51,9 +70,16 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
     fun saveCheckIn() {
         viewModelScope.launch {
             val s = _uiState.value
+            val dateStr = s.selectedDate.toString()
+
+            if (repository.getCheckInForDate(dateStr) != null) {
+                _uiState.update { it.copy(duplicateError = true) }
+                return@launch
+            }
+
             repository.insert(
                 DailyCheckIn(
-                    date = LocalDate.now().toString(),
+                    date = dateStr,
                     timestamp = System.currentTimeMillis(),
                     sleepHours = s.sleepHours,
                     energyLevel = s.energyLevel,
@@ -61,7 +87,10 @@ class CheckInViewModel(private val repository: DailyCheckInRepository) : ViewMod
                     symptoms = s.selectedSymptoms.joinToString(",")
                 )
             )
-            _uiState.update { it.copy(saved = true) }
+            _uiState.update { it.copy(saved = true, duplicateError = false) }
+
+            val request = OneTimeWorkRequestBuilder<PatternDetectorWorker>().build()
+            WorkManager.getInstance(context).enqueue(request)
         }
     }
 }

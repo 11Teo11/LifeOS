@@ -92,6 +92,7 @@ fun OnboardingScreen(
                 showError = showNameError
             )
             1 -> StepCalendar(
+                isConnected = calendarState is CalendarState.Success,
                 onConnectCalendar = { accountPickerLauncher.launch(calendarViewModel.getAccountPickerIntent()) },
                 onSkipCalendar = { viewModel.nextStep() }
             )
@@ -171,7 +172,11 @@ fun StepProfile(userName: String, onNameChange: (String) -> Unit, showError: Boo
 }
 
 @Composable
-fun StepCalendar(onConnectCalendar: () -> Unit, onSkipCalendar: () -> Unit) {
+fun StepCalendar(
+    isConnected: Boolean,
+    onConnectCalendar: () -> Unit,
+    onSkipCalendar: () -> Unit
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "Connect Google Calendar",
@@ -192,12 +197,39 @@ fun StepCalendar(onConnectCalendar: () -> Unit, onSkipCalendar: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(24.dp))
-        OutlinedButton(onClick = onConnectCalendar) {
-            Text("Connect Google Calendar")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        TextButton(onClick = onSkipCalendar) {
-            Text("I'll do this later")
+
+        if (isConnected) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "✓",
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Calendar connected successfully",
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            OutlinedButton(onClick = onConnectCalendar) {
+                Text("Connect Google Calendar")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onSkipCalendar) {
+                Text("I'll do this later")
+            }
         }
     }
 }
