@@ -10,11 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.db.entity.BudgetTarget
+import com.example.lifeos.data.db.entity.Transaction
 
 @Composable
 fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modifier) {
@@ -23,7 +24,7 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
     val totalBudgetTarget by viewModel.totalBudgetTarget.collectAsState(initial = null)
     val totalSpent by viewModel.totalSpent.collectAsState(initial = 0.0)
-
+    var transactionToCorrect by remember { mutableStateOf<Transaction?>(null) }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -145,9 +146,23 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
                 Spacer(modifier = Modifier.height(8.dp))
             }
             items(transactions) { transaction ->
-                TransactionItem(transaction = transaction)
+                TransactionItem(
+                    transaction = transaction,
+                    onCorrect = { transactionToCorrect = transaction }
+                )
             }
         }
+    }
+
+    transactionToCorrect?.let { transaction ->
+        CorrectCategoryDialog(
+            transaction = transaction,
+            onDismiss = { transactionToCorrect = null },
+            onConfirm = { newCategory ->
+                viewModel.correctCategory(transaction, newCategory)
+                transactionToCorrect = null
+            }
+        )
     }
 }
 
@@ -163,7 +178,7 @@ fun PreviewSection(
             Text("Found ${result.imported} transactions. First 5:")
             Spacer(modifier = Modifier.height(8.dp))
             result.preview.forEach { transaction ->
-                TransactionItem(transaction = transaction)
+                TransactionItem(transaction = transaction, onCorrect = {})
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -182,7 +197,8 @@ fun BudgetDashboardCard(target: BudgetTarget, totalSpent: Double) {
     val remaining = target.monthlyLimit - totalSpent
     val progress = (totalSpent / target.monthlyLimit).coerceIn(0.0, 1.0).toFloat()
     val isOverBudget = remaining < 0
-    val progressColor = if (progress >= 0.8f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val progressColor = if (progress >= 0.8f) MaterialTheme.colorScheme.error
+    else MaterialTheme.colorScheme.primary
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -236,14 +252,23 @@ fun BudgetDashboardCard(target: BudgetTarget, totalSpent: Double) {
                     "${"%.2f".format(remaining)} RON remaining",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isOverBudget) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 @Composable
-fun TransactionItem(transaction: Transaction) {
+fun TransactionItem(
+    transaction: Transaction,
+    onCorrect: () -> Unit
+) {
+    val categoryColor = when {
+        transaction.category == "uncategorized" -> MaterialTheme.colorScheme.onSurfaceVariant
+        transaction.isManuallyCorrected -> Color(0xFF2E7D32)
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -253,7 +278,8 @@ fun TransactionItem(transaction: Transaction) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -266,15 +292,83 @@ fun TransactionItem(transaction: Transaction) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = if (transaction.isManuallyCorrected)
+                        "${transaction.category} ✓"
+                    else
+                        transaction.category,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = categoryColor
+                )
             }
-            Text(
-                text = "${transaction.amount} ${transaction.currency}",
-                fontWeight = FontWeight.Bold,
-                color = if (transaction.amount < 0)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.primary
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${transaction.amount} ${transaction.currency}",
+                    fontWeight = FontWeight.Bold,
+                    color = if (transaction.amount < 0)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedButton(
+                    onClick = onCorrect,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp)
+                ) {
+                    Text(
+                        text = "Fix category",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+fun CorrectCategoryDialog(
+    transaction: Transaction,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var selectedCategory by remember { mutableStateOf(transaction.category) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Fix category") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = transaction.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                ALL_CATEGORIES.forEach { category ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        RadioButton(
+                            selected = selectedCategory == category,
+                            onClick = { selectedCategory = category }
+                        )
+                        Text(
+                            text = category,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selectedCategory) }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
