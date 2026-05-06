@@ -66,6 +66,25 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
     val totalSpent: Flow<Double> = transactions
         .map { list -> list.sumOf { Math.abs(it.amount) } }
 
+    val allBudgetTargets: Flow<List<BudgetTarget>> = AppDatabase.getDatabase(context)
+        .budgetTargetDao()
+        .getAllBudgetTargets()
+        .map { targets ->
+            targets.sortedByDescending { it.category == "💰 Total" }
+        }
+
+    val spentPerCategory: Flow<Map<String, Double>> = transactions
+        .map { list ->
+            val map = mutableMapOf<String, Double>()
+            // Total = suma tuturor
+            map["💰 Total"] = list.sumOf { Math.abs(it.amount) }
+            // Per categorie
+            list.groupBy { it.category }.forEach { (cat, txs) ->
+                map[cat] = txs.sumOf { Math.abs(it.amount) }
+            }
+            map
+        }
+
     fun previewCsv(inputStream: InputStream) {
         viewModelScope.launch {
             _importState.value = ImportState.Loading

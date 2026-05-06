@@ -93,7 +93,7 @@ fun BudgetSettingsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn {
-                items(budgetTargets) { budget ->
+                items(budgetTargets.sortedByDescending { it.category == "💰 Total" }) { budget ->
                     BudgetTargetItem(
                         budget = budget,
                         onDelete = { viewModel.deleteBudget(budget) }

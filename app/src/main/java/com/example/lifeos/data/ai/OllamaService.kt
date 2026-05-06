@@ -34,14 +34,28 @@ class OllamaService {
 
     private fun buildPrompt(description: String, amount: Double): String {
         return """
-            You are a transaction classifier. Classify this bank transaction into exactly one category.
-            
-            Transaction: "$description" Amount: $amount RON
-            
-            Categories: 🍔 Food, 🚌 Transport, 🎬 Entertainment, 🛍️ Shopping, 💊 Health, 📚 Education, 📦 Other
-            
-            Reply with ONLY the category name, nothing else. Example: 🍔 Food
-        """.trimIndent()
+        You are a bank transaction classifier. Classify into exactly one category.
+        
+        Transaction: "$description" Amount: $amount RON
+        
+        Categories:
+        🍔 Food - supermarkets, restaurants, food delivery, groceries, cafes
+        🚌 Transport - ride sharing, public transport, fuel, parking, taxi
+        🎬 Entertainment - streaming services, cinema, games, media subscriptions
+        🛍️ Shopping - clothing, electronics, online retail, general stores
+        💊 Health - pharmacy, medical services, gym, fitness
+        📚 Education - books, courses, university, learning platforms
+        📦 Other - anything that doesn't fit above
+        
+        Examples:
+        - Any supermarket or grocery store (Kaufland, Penny, Carrefour, Lidl, Mega Image, Profi) → 🍔 Food
+        - Any food delivery app (Glovo, Tazz, Bolt Food) → 🍔 Food
+        - Any ride sharing or public transport (Uber, Bolt, STB, RATB, CFR, bus, tram, metro) → 🚌 Transport
+        - Any streaming or music service (Netflix, Spotify, HBO, Disney) → 🎬 Entertainment
+        - Top-Up, phone credit, mobile recharge → 🛍️ Shopping
+        
+        Reply with ONLY the category name. Example: 🍔 Food
+    """.trimIndent()
     }
 
     private fun sendRequest(prompt: String): String {

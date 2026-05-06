@@ -22,8 +22,8 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
     val context = LocalContext.current
     val importState by viewModel.importState.collectAsState()
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
-    val totalBudgetTarget by viewModel.totalBudgetTarget.collectAsState(initial = null)
-    val totalSpent by viewModel.totalSpent.collectAsState(initial = 0.0)
+    val allBudgetTargets by viewModel.allBudgetTargets.collectAsState(initial = emptyList())
+    val spentPerCategory by viewModel.spentPerCategory.collectAsState(initial = emptyMap())
     var transactionToCorrect by remember { mutableStateOf<Transaction?>(null) }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -50,10 +50,22 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
             )
         }
 
-        totalBudgetTarget?.let { target ->
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                BudgetDashboardCard(target = target, totalSpent = totalSpent)
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            if (allBudgetTargets.isEmpty()) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "No budgets set. Go to Settings to add one.",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                allBudgetTargets.forEach { target ->
+                    val spent = spentPerCategory[target.category] ?: 0.0
+                    CategoryBudgetCard(target = target, spent = spent)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
 
@@ -178,7 +190,11 @@ fun PreviewSection(
             Text("Found ${result.imported} transactions. First 5:")
             Spacer(modifier = Modifier.height(8.dp))
             result.preview.forEach { transaction ->
-                TransactionItem(transaction = transaction, onCorrect = {})
+                TransactionItem(
+                    transaction = transaction,
+                    onCorrect = {},
+                    showFixButton = false
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -193,52 +209,36 @@ fun PreviewSection(
 }
 
 @Composable
-fun BudgetDashboardCard(target: BudgetTarget, totalSpent: Double) {
-    val remaining = target.monthlyLimit - totalSpent
-    val progress = (totalSpent / target.monthlyLimit).coerceIn(0.0, 1.0).toFloat()
+fun CategoryBudgetCard(target: BudgetTarget, spent: Double) {
+    val progress = (spent / target.monthlyLimit).coerceIn(0.0, 1.0).toFloat()
+    val remaining = target.monthlyLimit - spent
     val isOverBudget = remaining < 0
-    val progressColor = if (progress >= 0.8f) MaterialTheme.colorScheme.error
-    else MaterialTheme.colorScheme.primary
+
+    val progressColor = when {
+        progress >= 1.0f -> MaterialTheme.colorScheme.error
+        progress >= 0.8f -> Color(0xFFF9A825)
+        else -> Color(0xFF2E7D32)
+    }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Monthly Budget",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Spent",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${"%.2f".format(totalSpent)} RON",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Budget",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${"%.2f".format(target.monthlyLimit)} RON",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = target.category,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${"%.2f".format(spent)} / ${"%.2f".format(target.monthlyLimit)} RON",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.fillMaxWidth(),
@@ -261,7 +261,8 @@ fun BudgetDashboardCard(target: BudgetTarget, totalSpent: Double) {
 @Composable
 fun TransactionItem(
     transaction: Transaction,
-    onCorrect: () -> Unit
+    onCorrect: () -> Unit,
+    showFixButton: Boolean = true
 ) {
     val categoryColor = when {
         transaction.category == "uncategorized" -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -310,16 +311,18 @@ fun TransactionItem(
                     else
                         MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = onCorrect,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    modifier = Modifier.height(28.dp)
-                ) {
-                    Text(
-                        text = "Fix category",
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                if (showFixButton) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedButton(
+                        onClick = onCorrect,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Text(
+                            text = "Fix category",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
             }
         }
@@ -345,7 +348,7 @@ fun CorrectCategoryDialog(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                ALL_CATEGORIES.forEach { category ->
+                DEFAULT_CATEGORIES.forEach { category ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
