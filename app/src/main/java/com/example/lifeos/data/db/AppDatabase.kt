@@ -5,20 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.lifeos.data.db.dao.AcademicEventDao
+import com.example.lifeos.data.db.dao.AgentInsightDao
 import com.example.lifeos.data.db.dao.BudgetTargetDao
-import com.example.lifeos.data.db.dao.TransactionDao
-import com.example.lifeos.data.db.entity.Transaction
-import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.dao.DailyCheckInDao
 import com.example.lifeos.data.db.dao.HabitDao
+import com.example.lifeos.data.db.dao.PatternAlertDao
 import com.example.lifeos.data.db.dao.TransactionCorrectionDao
-import com.example.lifeos.data.db.entity.HabitLog
+import com.example.lifeos.data.db.dao.TransactionDao
+import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.AgentInsight
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
-import com.example.lifeos.data.db.dao.DailyCheckInDao
-import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.entity.HabitLog
+import com.example.lifeos.data.db.entity.PatternAlert
+import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.db.entity.TransactionCorrection
-import com.example.lifeos.data.db.entity.AgentInsight
-import com.example.lifeos.data.db.dao.AgentInsightDao
 
 @Database(
     entities = [
@@ -29,9 +31,10 @@ import com.example.lifeos.data.db.dao.AgentInsightDao
         DailyCheckIn::class,
         AcademicEvent::class,
         TransactionCorrection::class,
-        AgentInsight::class
+        AgentInsight::class,
+        PatternAlert::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -41,9 +44,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun budgetTargetDao(): BudgetTargetDao
     abstract fun academicEventDao(): AcademicEventDao
     abstract fun dailyCheckInDao(): DailyCheckInDao
-
     abstract fun transactionCorrectionDao(): TransactionCorrectionDao
     abstract fun agentInsightDao(): AgentInsightDao
+    abstract fun patternAlertDao(): PatternAlertDao
+
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
