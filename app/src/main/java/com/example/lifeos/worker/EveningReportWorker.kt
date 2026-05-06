@@ -12,7 +12,7 @@ import com.example.lifeos.MainActivity
 import com.example.lifeos.data.agent.EveningReportAgent
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.HabitLog
-import com.example.lifeos.data.report.ReportPreferences
+import com.example.lifeos.data.preferences.ReportPreferences
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 

@@ -1,18 +1,23 @@
 package com.example.lifeos.data.ai
 
 import android.content.Context
+import com.example.lifeos.data.OllamaPreferences
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.Transaction
 import com.example.lifeos.data.db.entity.TransactionCorrection
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class Agent2Classifier(private val context: Context) {
 
-    private val ollamaService = OllamaService()
+    private val ollamaPreferences = OllamaPreferences(context)
     private val db = AppDatabase.getDatabase(context)
 
     suspend fun classifyTransactions(transactions: List<Transaction>): List<Transaction> {
+        val host = ollamaPreferences.ollamaHost.first()
+        val ollamaService = OllamaService(host)
+
         return withContext(Dispatchers.IO) {
             val corrections = db.transactionCorrectionDao().getAllCorrectionsOnce()
             val correctionMap = corrections.associate {
@@ -51,7 +56,6 @@ class Agent2Classifier(private val context: Context) {
                 )
             )
 
-            // Aplica corectia si la tranzactiile existente cu acelasi keyword
             val allTransactions = db.transactionDao().getAllTransactionsOnce()
             val toUpdate = allTransactions.filter {
                 it.description.lowercase().contains(keyword)
@@ -78,7 +82,6 @@ class Agent2Classifier(private val context: Context) {
     }
 
     private fun extractKeyword(description: String): String {
-        // Ia primul cuvant semnificativ din descriere
         return description.trim()
             .split(" ")
             .firstOrNull { it.length > 2 }

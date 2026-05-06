@@ -10,12 +10,13 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
-class OllamaService {
+class OllamaService(private val host: String = "10.0.2.2") {
 
     companion object {
-        private const val BASE_URL = "http://10.0.2.2:11434"
         private const val MODEL = "mistral"
     }
+
+    private val baseUrl get() = "http://$host:11434"
 
     suspend fun classify(transactionDescription: String, amount: Double): String {
         return withContext(Dispatchers.IO) {
@@ -60,7 +61,7 @@ class OllamaService {
 
     private fun sendRequest(prompt: String): String {
         Log.d("OllamaService", "Sending request to Ollama...")
-        val url = URL("$BASE_URL/api/generate")
+        val url = URL("$baseUrl/api/generate")
         val connection = url.openConnection() as HttpURLConnection
 
         connection.requestMethod = "POST"

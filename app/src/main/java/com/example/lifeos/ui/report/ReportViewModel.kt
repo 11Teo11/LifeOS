@@ -3,7 +3,7 @@ package com.example.lifeos.ui.report
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lifeos.data.report.ReportPreferences
+import com.example.lifeos.data.preferences.ReportPreferences
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine

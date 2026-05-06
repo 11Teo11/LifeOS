@@ -1,4 +1,4 @@
-package com.example.lifeos.data.onboarding
+package com.example.lifeos.data.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
