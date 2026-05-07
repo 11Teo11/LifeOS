@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.db.entity.BudgetTarget
@@ -21,6 +22,9 @@ fun BudgetSettingsScreen(
 ) {
     val budgetTargets by viewModel.budgetTargets.collectAsState(initial = emptyList())
     val saveState by viewModel.saveState.collectAsState()
+    val ollamaHost by viewModel.ollamaHost.collectAsState()
+    val ollamaSaveSuccess by viewModel.ollamaSaveSuccess.collectAsState()
+    var ollamaHostInput by remember(ollamaHost) { mutableStateOf(ollamaHost) }
 
     var selectedCategory by remember { mutableStateOf(ALL_CATEGORIES.first()) }
     var budgetInput by remember { mutableStateOf("") }
@@ -92,7 +96,7 @@ fun BudgetSettingsScreen(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn {
+            LazyColumn(modifier = Modifier.weight(1f)) {
                 items(budgetTargets.sortedByDescending { it.category == "💰 Total" }) { budget ->
                     BudgetTargetItem(
                         budget = budget,
@@ -116,6 +120,46 @@ fun BudgetSettingsScreen(
                 )
             }
             else -> {}
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Ollama Settings",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Set the IP address of the laptop running Ollama. Use 10.0.2.2 for emulator, or your laptop's WiFi IP for a real device.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = ollamaHostInput,
+            onValueChange = { ollamaHostInput = it },
+            label = { Text("Laptop IP address") },
+            placeholder = { Text("e.g. 192.168.1.105") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = { viewModel.saveOllamaHost(ollamaHostInput) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save Ollama Host")
+        }
+        if (ollamaSaveSuccess) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "✓ Saved successfully",
+                color = Color(0xFF2E7D32),
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 

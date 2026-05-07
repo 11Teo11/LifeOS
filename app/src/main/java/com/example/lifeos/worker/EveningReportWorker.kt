@@ -9,10 +9,11 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.lifeos.MainActivity
+import com.example.lifeos.data.preferences.OllamaPreferences
 import com.example.lifeos.data.agent.EveningReportAgent
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.HabitLog
-import com.example.lifeos.data.report.ReportPreferences
+import com.example.lifeos.data.preferences.ReportPreferences
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
@@ -34,6 +35,7 @@ class EveningReportWorker(
         return try {
             val db = AppDatabase.getDatabase(applicationContext)
             val today = LocalDate.now().toString()
+            val host = OllamaPreferences(applicationContext).ollamaHost.first()
 
             val checkIn = db.dailyCheckInDao().getCheckInForDate(today)
             if (checkIn == null) {
@@ -80,7 +82,8 @@ class EveningReportWorker(
                 todayTransactions = todayTransactions,
                 todayHabitLogs = todayLogs,
                 totalActiveHabits = totalActiveHabits,
-                latestAlert = latestAlert
+                latestAlert = latestAlert,
+                host = host
             )
 
             ReportPreferences(applicationContext).saveReport(

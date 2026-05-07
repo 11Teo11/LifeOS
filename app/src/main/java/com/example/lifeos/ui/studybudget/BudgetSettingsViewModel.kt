@@ -3,14 +3,18 @@ package com.example.lifeos.ui.studybudget
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lifeos.data.preferences.OllamaPreferences
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.repository.BudgetTargetRepository
 import com.example.lifeos.data.repository.BudgetStatus
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 val DEFAULT_CATEGORIES = listOf(
@@ -27,10 +31,18 @@ class BudgetSettingsViewModel(context: Context) : ViewModel() {
         AppDatabase.getDatabase(context).transactionDao()
     )
 
+    private val ollamaPreferences = OllamaPreferences(context)
+
     val budgetTargets = repository.allBudgetTargets
+
+    val ollamaHost: StateFlow<String> = ollamaPreferences.ollamaHost
+        .stateIn(viewModelScope, SharingStarted.Eagerly, OllamaPreferences.DEFAULT_HOST)
 
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     val saveState: StateFlow<SaveState> = _saveState.asStateFlow()
+
+    private val _ollamaSaveSuccess = MutableStateFlow(false)
+    val ollamaSaveSuccess: StateFlow<Boolean> = _ollamaSaveSuccess.asStateFlow()
 
     fun saveBudget(category: String, monthlyLimit: Double) {
         if (monthlyLimit <= 0) {
@@ -45,6 +57,15 @@ class BudgetSettingsViewModel(context: Context) : ViewModel() {
                 )
             )
             _saveState.value = SaveState.Success
+        }
+    }
+
+    fun saveOllamaHost(host: String) {
+        viewModelScope.launch {
+            ollamaPreferences.setOllamaHost(host.trim())
+            _ollamaSaveSuccess.value = true
+            delay(2000)
+            _ollamaSaveSuccess.value = false
         }
     }
 

@@ -13,10 +13,8 @@ sealed class CsvParseResult {
 
 class CsvParser {
 
-    private val REVOLUT_HEADERS = listOf(
-        "Type", "Product", "Started Date", "Completed Date",
-        "Description", "Amount", "Fee", "Currency"
-    )
+    // Headerul real din noul format Revolut
+    private val REVOLUT_HEADER_COLUMNS = listOf("Date", "Description", "Category", "Money in/out")
 
     fun parseRevolutCsv(inputStream: InputStream): CsvParseResult {
         try {
@@ -26,25 +24,49 @@ class CsvParser {
 
             if (rows.isEmpty()) return CsvParseResult.EmptyFile
 
-            val header = rows[0].map { it.trim() }
-            val isValidRevolut = REVOLUT_HEADERS.any { expectedHeader ->
-                header.any { it.equals(expectedHeader, ignoreCase = true) }
+            // Gasim randul cu headerul real (cel care contine "Date", "Description", etc.)
+            val headerRowIndex = rows.indexOfFirst { row ->
+                val cells = row.map { it.trim() }
+                REVOLUT_HEADER_COLUMNS.all { expected ->
+                    cells.any { it.equals(expected, ignoreCase = true) }
+                }
             }
 
-            if (!isValidRevolut) return CsvParseResult.InvalidFormat
+            if (headerRowIndex == -1) return CsvParseResult.InvalidFormat
+
+            val header = rows[headerRowIndex].map { it.trim() }
+
+            // Gasim indicii coloanelor
+            val dateIndex = header.indexOfFirst { it.equals("Date", ignoreCase = true) }
+            val descIndex = header.indexOfFirst { it.equals("Description", ignoreCase = true) }
+            val amountIndex = header.indexOfFirst { it.equals("Money in/out", ignoreCase = true) }
+
+            if (dateIndex == -1 || descIndex == -1 || amountIndex == -1) {
+                return CsvParseResult.InvalidFormat
+            }
 
             val transactions = mutableListOf<Transaction>()
-            val dataRows = rows.drop(1)
+            val dataRows = rows.drop(headerRowIndex + 1)
 
             for (row in dataRows) {
-                if (row.size < 8) continue
+                if (row.size <= amountIndex) continue
                 try {
-                    val date = row[2].trim()
-                    val description = row[4].trim()
-                    val amount = row[5].trim().toDoubleOrNull() ?: continue
-                    val currency = row[7].trim()
+                    val date = row[dateIndex].trim()
+                    val description = row[descIndex].trim()
+                    val amountRaw = row[amountIndex].trim()
 
-                    if (date.isBlank() || description.isBlank()) continue
+                    if (date.isBlank() || description.isBlank() || amountRaw.isBlank()) continue
+
+                    // Parsam suma: "-37.50 RON" sau "120.00 RON"
+                    val currency = if (amountRaw.contains("RON")) "RON"
+                    else amountRaw.filter { it.isLetter() }.ifBlank { "RON" }
+
+                    val amountStr = amountRaw
+                        .replace(currency, "")
+                        .replace(",", "")
+                        .trim()
+
+                    val amount = amountStr.toDoubleOrNull() ?: continue
 
                     transactions.add(
                         Transaction(

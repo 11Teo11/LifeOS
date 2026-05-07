@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.BudgetTarget
-import com.example.lifeos.data.onboarding.OnboardingPreferences
+import com.example.lifeos.data.preferences.OnboardingPreferences
 import com.example.lifeos.data.repository.BudgetTargetRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

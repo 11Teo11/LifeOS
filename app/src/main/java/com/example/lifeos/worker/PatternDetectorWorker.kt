@@ -3,9 +3,11 @@ package com.example.lifeos.worker
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.lifeos.data.preferences.OllamaPreferences
 import com.example.lifeos.data.agent.PatternDetectorAgent
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.PatternAlert
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
 class PatternDetectorWorker(
@@ -15,13 +17,17 @@ class PatternDetectorWorker(
 
     override suspend fun doWork(): Result {
         val db = AppDatabase.getDatabase(applicationContext)
+        val host = OllamaPreferences(applicationContext).ollamaHost.first()
 
         val checkIns = db.dailyCheckInDao()
             .getCheckInsFromOnce(LocalDate.now().minusDays(13).toString())
 
-        val result = PatternDetectorAgent.analyze(checkIns)
+        val result = PatternDetectorAgent.analyze(checkIns, host)
 
-        android.util.Log.d("PatternDetector", "checkIns=${checkIns.size}, hasPattern=${result.hasPattern}, type=${result.patternType}, severity=${result.severity}")
+        android.util.Log.d(
+            "PatternDetector",
+            "checkIns=${checkIns.size}, hasPattern=${result.hasPattern}, type=${result.patternType}, severity=${result.severity}"
+        )
 
         db.patternAlertDao().insert(
             PatternAlert(
