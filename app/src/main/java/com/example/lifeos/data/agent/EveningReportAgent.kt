@@ -16,9 +16,10 @@ object EveningReportAgent {
         todayTransactions: List<Transaction>,
         todayHabitLogs: List<HabitLog>,
         totalActiveHabits: Int,
-        latestAlert: PatternAlert?
+        latestAlert: PatternAlert?,
+        host: String = "10.0.2.2"
     ): EveningReport {
-        return tryOllama(checkIn, todayTransactions, todayHabitLogs, totalActiveHabits, latestAlert)
+        return tryOllama(checkIn, todayTransactions, todayHabitLogs, totalActiveHabits, latestAlert, host)
             ?: ruleBasedFallback(checkIn, todayTransactions, todayHabitLogs, totalActiveHabits, latestAlert)
     }
 
@@ -29,11 +30,12 @@ object EveningReportAgent {
         todayTransactions: List<Transaction>,
         todayHabitLogs: List<HabitLog>,
         totalActiveHabits: Int,
-        latestAlert: PatternAlert?
+        latestAlert: PatternAlert?,
+        host: String
     ): EveningReport? {
         return try {
             val prompt = buildPrompt(checkIn, todayTransactions, todayHabitLogs, totalActiveHabits, latestAlert)
-            val raw = withContext(Dispatchers.IO) { OllamaClient.generate(prompt) }
+            val raw = withContext(Dispatchers.IO) { OllamaClient.generate(prompt, host) }
                 ?: return null
             val trimmed = raw.trim()
             if (trimmed.isBlank() || trimmed.length < 30) return null

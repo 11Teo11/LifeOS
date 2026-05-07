@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.db.entity.BudgetTarget
@@ -22,6 +23,7 @@ fun BudgetSettingsScreen(
     val budgetTargets by viewModel.budgetTargets.collectAsState(initial = emptyList())
     val saveState by viewModel.saveState.collectAsState()
     val ollamaHost by viewModel.ollamaHost.collectAsState()
+    val ollamaSaveSuccess by viewModel.ollamaSaveSuccess.collectAsState()
     var ollamaHostInput by remember(ollamaHost) { mutableStateOf(ollamaHost) }
 
     var selectedCategory by remember { mutableStateOf(ALL_CATEGORIES.first()) }
@@ -150,6 +152,14 @@ fun BudgetSettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Save Ollama Host")
+        }
+        if (ollamaSaveSuccess) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "✓ Saved successfully",
+                color = Color(0xFF2E7D32),
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 

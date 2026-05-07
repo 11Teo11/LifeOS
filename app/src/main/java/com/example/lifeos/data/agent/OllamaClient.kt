@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit
 
 object OllamaClient {
 
-    private const val BASE_URL = "http://10.0.2.2:11434"
     private const val MODEL = "mistral"
 
     private val http = OkHttpClient.Builder()
@@ -18,8 +17,9 @@ object OllamaClient {
         .build()
 
     // Blocking call — always invoke from Dispatchers.IO
-    fun generate(prompt: String): String? {
+    fun generate(prompt: String, host: String = "10.0.2.2"): String? {
         return try {
+            val baseUrl = "http://$host:11434"
             val body = JSONObject().apply {
                 put("model", MODEL)
                 put("prompt", prompt)
@@ -27,7 +27,7 @@ object OllamaClient {
             }.toString().toRequestBody("application/json".toMediaType())
 
             val request = Request.Builder()
-                .url("$BASE_URL/api/generate")
+                .url("$baseUrl/api/generate")
                 .post(body)
                 .build()
 

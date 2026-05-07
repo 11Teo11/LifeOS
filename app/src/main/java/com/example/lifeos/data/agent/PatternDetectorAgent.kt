@@ -14,16 +14,23 @@ data class PatternResult(
 
 object PatternDetectorAgent {
 
-    suspend fun analyze(checkIns: List<DailyCheckIn>): PatternResult {
+    suspend fun analyze(checkIns: List<DailyCheckIn>, host: String = "10.0.2.2"): PatternResult {
         if (checkIns.size < 3) return noPattern()
         val sorted = checkIns.sortedBy { it.date }
-        return tryOllama(sorted) ?: ruleBasedFallback(sorted)
+        return tryOllama(sorted, host) ?: ruleBasedFallback(sorted)
     }
 
     // ── Ollama path ────────────────────────────────────────────────────────────
 
-    private suspend fun tryOllama(sorted: List<DailyCheckIn>): PatternResult? {
-        return null
+    private suspend fun tryOllama(sorted: List<DailyCheckIn>, host: String): PatternResult? {
+        return try {
+            val prompt = buildPrompt(sorted)
+            val raw = withContext(Dispatchers.IO) { OllamaClient.generate(prompt, host) }
+                ?: return null
+            parseJson(raw)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun buildPrompt(sorted: List<DailyCheckIn>): String {
