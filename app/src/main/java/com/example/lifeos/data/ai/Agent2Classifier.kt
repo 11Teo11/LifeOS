@@ -14,10 +14,6 @@ class Agent2Classifier(private val context: Context) {
     private val ollamaPreferences = OllamaPreferences(context)
     private val db = AppDatabase.getDatabase(context)
 
-    companion object {
-        private const val BATCH_SIZE = 10
-    }
-
     suspend fun classifyTransactions(transactions: List<Transaction>): List<Transaction> {
         val host = ollamaPreferences.ollamaHost.first()
         val ollamaService = OllamaService(host)
@@ -28,39 +24,14 @@ class Agent2Classifier(private val context: Context) {
                 it.keyword.lowercase() to it.category
             }
 
-            // Separam tranzactiile cu corectii manuale de cele care trebuie clasificate
-            val manuallyClassified = mutableListOf<Pair<Int, Transaction>>()
-            val toClassify = mutableListOf<Pair<Int, Transaction>>()
-
-            transactions.forEachIndexed { index, transaction ->
+            transactions.map { transaction ->
                 val manualCategory = findManualCorrection(transaction.description, correctionMap)
                 if (manualCategory != null) {
-                    manuallyClassified.add(index to transaction.copy(
-                        category = manualCategory,
-                        isManuallyCorrected = true
-                    ))
+                    transaction.copy(category = manualCategory, isManuallyCorrected = true)
                 } else {
-                    toClassify.add(index to transaction)
+                    val category = ollamaService.classify(transaction.description, transaction.amount)
+                    transaction.copy(category = category)
                 }
-            }
-
-            // Clasificam in batch-uri de BATCH_SIZE
-            val classified = mutableMapOf<Int, Transaction>()
-            manuallyClassified.forEach { (index, t) -> classified[index] = t }
-
-            toClassify.chunked(BATCH_SIZE).forEach { chunk ->
-                val descriptions = chunk.map { (_, t) -> t.description }
-                val categories = ollamaService.classifyBatch(descriptions)
-
-                chunk.forEachIndexed { i, (originalIndex, transaction) ->
-                    val category = categories.getOrElse(i) { "📦 Other" }
-                    classified[originalIndex] = transaction.copy(category = category)
-                }
-            }
-
-            // Returnam in ordinea originala
-            transactions.indices.map { index ->
-                classified[index] ?: transactions[index].copy(category = "📦 Other")
             }
         }
     }
