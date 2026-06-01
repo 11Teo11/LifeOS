@@ -17,7 +17,7 @@ Acest document descrie toolurile AI folosite în dezvoltarea proiectului LifeOS,
 
 ---
 
-## Teo — StudyBudget, Agent 2, Agent 3, Google Calendar
+## Teodor Vasile — StudyBudget, Agent 2, Agent 3, Google Calendar
 
 ### 1. Design și arhitectură
 
@@ -32,7 +32,30 @@ Claude a generat structura inițială pentru `Transaction`, `BudgetTarget`, `Tra
 
 ---
 
-### 2. Implementare — CSV Parser
+### 2. Documentație echipă — TEAM_GUIDELINES.md și agent-contracts.md
+
+**Tool folosit:** Claude
+
+Înainte de a începe implementarea, am folosit Claude pentru a genera documentele de lucru ale echipei.
+
+**`TEAM_GUIDELINES.md`** — Claude a generat regulile de colaborare pentru echipă, inclusiv:
+- Reguli pentru structura proiectului și `AppDatabase`
+- Procesul corect de adăugare a dependențelor Gradle
+- Workflow Git (branch creation, commit messages, Pull Requests)
+- Checklist înainte de orice PR
+- Reguli pentru Firebase și Google OAuth
+- Tabelul de categorii de buget cu emoji
+
+**`docs/agent-contracts.md`** — Claude a generat contractele JSON pentru toți cei 5 agenți AI, specificând:
+- Input/output schemas exacte pentru fiecare agent
+- Trigger-urile și ownership-ul per agent
+- Exemple de JSON pentru fiecare agent
+
+Aceste documente au servit ca referință comună pentru toată echipa pe parcursul dezvoltării.
+
+---
+
+### 3. Implementare — CSV Parser
 
 **Tool folosit:** Claude + Android Studio AI
 
@@ -46,7 +69,7 @@ CSV-ul Revolut are un format nestandard — primele 29 de rânduri sunt metadata
 
 ---
 
-### 3. Implementare — Agent 2 (clasificare tranzacții)
+### 4. Implementare — Agent 2 (clasificare tranzacții)
 
 **Tool folosit:** Claude + Gemini
 
@@ -66,7 +89,7 @@ Iterații pe prompt pentru îmbunătățirea acurateței:
 
 ---
 
-### 4. Implementare — Agent 3 (academic context)
+### 5. Implementare — Agent 3 (academic context)
 
 **Tool folosit:** Claude
 
@@ -79,7 +102,7 @@ Claude a implementat:
 
 ---
 
-### 5. Implementare — Google Calendar OAuth
+### 6. Implementare — Google Calendar OAuth
 
 **Tool folosit:** Claude + Gemini
 
@@ -94,7 +117,7 @@ Integrarea cu Google Calendar API v3 a fost cea mai complexă parte.
 
 ---
 
-### 6. Configurare Ollama pentru dispozitiv real
+### 7. Configurare Ollama pentru dispozitiv real
 
 **Tool folosit:** Claude
 
@@ -107,7 +130,7 @@ Claude a implementat:
 
 ---
 
-### 7. Source control — Commit messages
+### 8. Source control — Commit messages
 
 **Tool folosit:** GitHub Copilot
 
@@ -122,7 +145,7 @@ chore: update Room version to 2.7.1
 
 ---
 
-### 8. CI/CD Pipeline
+### 9. CI/CD Pipeline
 
 **Tool folosit:** GitHub Copilot
 
@@ -130,7 +153,7 @@ Fișierul `.github/workflows/ci.yml` a fost generat cu ajutorul GitHub Copilot. 
 
 ---
 
-### 9. Debugging
+### 10. Debugging
 
 **Tool folosit:** Claude + Android Studio AI
 
@@ -143,7 +166,7 @@ Fișierul `.github/workflows/ci.yml` a fost generat cu ajutorul GitHub Copilot. 
 
 ---
 
-### 10. Documentație
+### 11. Documentație finală
 
 **Tool folosit:** Claude
 
@@ -154,13 +177,13 @@ Claude a generat:
 
 ---
 
-## Roberta — WellCheck, Check-In, Agent 1
+## Roberta Virghileanu — WellCheck, Check-In, Agent 1
 
 <!-- Roberta completează această secțiune -->
 
 ---
 
-## Erika — Habit Tracker, Agent 5, Onboarding
+## Erika Plesca — Habit Tracker, Agent 5, Onboarding
 
 <!-- Erika completează această secțiune -->
 
@@ -172,6 +195,7 @@ Toolurile AI au accelerat semnificativ dezvoltarea proiectului. Estimăm că apr
 
 - Entitățile Room și DAO-urile — generate aproape integral de Claude
 - Logica agenților AI — scrisă de Claude cu iterații pe prompt
+- Documentele de echipă (TEAM_GUIDELINES, agent-contracts) — generate de Claude
 - Commit messages — generate automat de GitHub Copilot
 - CI/CD workflow — generat de GitHub Copilot
 
