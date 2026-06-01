@@ -279,6 +279,7 @@ class MainActivity : ComponentActivity() {
                                 isOnboardingFullyCompleted = isOnboardingFullyCompleted,
                                 onCompleteOnboarding = {
                                     onboardingViewModel.resetForReEntry()
+                                    calendarViewModel.resetState()
                                 },
                                 modifier = Modifier.padding(innerPadding)
                             )
