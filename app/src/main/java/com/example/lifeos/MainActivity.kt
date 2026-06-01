@@ -22,11 +22,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.*
 import com.example.lifeos.data.db.AppDatabase
+import com.example.lifeos.data.preferences.OllamaPreferences
 import com.example.lifeos.data.repository.DailyCheckInRepository
+import com.example.lifeos.data.repository.DayPlanRepository
 import com.example.lifeos.data.repository.HabitRepository
 import com.example.lifeos.data.repository.PatternAlertRepository
+import com.example.lifeos.data.repository.TransactionRepository
 import com.example.lifeos.ui.checkin.CheckInScreen
 import com.example.lifeos.ui.checkin.CheckInViewModel
+import com.example.lifeos.ui.habit.DayPlanViewModel
 import com.example.lifeos.ui.habit.HabitScreen
 import com.example.lifeos.ui.habit.HabitViewModel
 import com.example.lifeos.ui.onboarding.OnboardingScreen
@@ -51,6 +55,7 @@ import java.util.concurrent.TimeUnit
 class MainActivity : ComponentActivity() {
 
     private lateinit var habitViewModel: HabitViewModel
+    private lateinit var dayPlanViewModel: DayPlanViewModel
     private lateinit var checkInViewModel: CheckInViewModel
     private val tabToOpen = mutableStateOf(0)
 
@@ -160,6 +165,23 @@ class MainActivity : ComponentActivity() {
 
         val checkInRepository = DailyCheckInRepository(database.dailyCheckInDao())
         val patternAlertRepository = PatternAlertRepository(database.patternAlertDao())
+        val transactionRepository = TransactionRepository(database.transactionDao())
+        val dayPlanRepository = DayPlanRepository(database.dayPlanDao())
+        val ollamaPreferences = OllamaPreferences(applicationContext)
+        dayPlanViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return DayPlanViewModel(
+                    checkInDao = database.dailyCheckInDao(),
+                    patternAlertRepository = patternAlertRepository,
+                    transactionRepository = transactionRepository,
+                    academicEventDao = database.academicEventDao(),
+                    habitRepository = repository,
+                    dayPlanRepository = dayPlanRepository,
+                    ollamaPreferences = ollamaPreferences
+                ) as T
+            }
+        })[DayPlanViewModel::class.java]
         checkInViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
@@ -241,6 +263,7 @@ class MainActivity : ComponentActivity() {
                             )
                             1 -> HabitScreen(
                                 viewModel = habitViewModel,
+                                dayPlanViewModel = dayPlanViewModel,
                                 modifier = Modifier.padding(innerPadding)
                             )
                             2 -> CalendarScreen(

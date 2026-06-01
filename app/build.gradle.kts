@@ -97,6 +97,8 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    // org.json is stubbed in Android unit tests; pull in real impl for JVM tests
+    testImplementation(libs.org.json)
 
     // Integration test (instrumented) dependencies
     androidTestImplementation(libs.androidx.room.testing)

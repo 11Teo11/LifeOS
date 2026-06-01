@@ -11,9 +11,14 @@ import androidx.compose.ui.unit.dp
 import com.example.lifeos.data.db.entity.Habit
 
 @Composable
-fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
+fun HabitScreen(
+    viewModel: HabitViewModel,
+    dayPlanViewModel: DayPlanViewModel,
+    modifier: Modifier = Modifier
+) {
     val habits by viewModel.habits.collectAsState()
     val completedHabitIds by viewModel.completedHabitIds.collectAsState()
+    val planState by dayPlanViewModel.planState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -26,27 +31,45 @@ fun HabitScreen(viewModel: HabitViewModel, modifier: Modifier = Modifier) {
             }
         }
     ){ padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Text(
-                text = "My Habits",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-
+        LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize()
+        ) {
+            item {
+                Text(
+                    text = "My Habits",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            item {
+                DayPlanCard(
+                    state = planState,
+                    onGenerate = dayPlanViewModel::generatePlan,
+                    onUpdateSuggestion = dayPlanViewModel::updateDraftSuggestion,
+                    onRemoveSuggestion = dayPlanViewModel::removeDraftSuggestion,
+                    onSave = dayPlanViewModel::saveDraft,
+                    onDiscard = dayPlanViewModel::discardDraft,
+                    onRegenerate = dayPlanViewModel::clearSavedAndRegenerate
+                )
+                Spacer(Modifier.height(16.dp))
+            }
             if (habits.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No habits yet. Press + to add one.")
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No habits yet. Press + to add one.")
+                    }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(habits) { habit ->
-                        HabitItem(
-                            habit = habit,
-                            isChecked = habit.id in completedHabitIds,
-                            onCheck = { viewModel.logHabitDone(habit.id) },
-                            onDelete = { viewModel.deleteHabit(habit) }
-                        )
-                    }
+                items(habits) { habit ->
+                    HabitItem(
+                        habit = habit,
+                        isChecked = habit.id in completedHabitIds,
+                        onCheck = { viewModel.logHabitDone(habit.id) },
+                        onDelete = { viewModel.deleteHabit(habit) }
+                    )
                 }
             }
         }
