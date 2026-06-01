@@ -51,12 +51,16 @@ class GoogleCalendarService(private val context: Context) {
             .setSingleEvents(true)
             .execute()
 
-        return events.items.map { event ->
+        return events.items.orEmpty().mapNotNull { event ->
+            val start = event.start ?: return@mapNotNull null
+            val end = event.end ?: event.start
+            val startStr = start.dateTime?.toString() ?: start.date?.toString() ?: return@mapNotNull null
+            val endStr = end.dateTime?.toString() ?: end.date?.toString() ?: startStr
             AcademicEventData(
-                googleEventId = event.id,
+                googleEventId = event.id ?: "evt_${System.currentTimeMillis()}_${startStr.hashCode()}",
                 title = event.summary ?: "No title",
-                startDate = event.start.dateTime?.toString() ?: event.start.date.toString(),
-                endDate = event.end.dateTime?.toString() ?: event.end.date.toString(),
+                startDate = startStr,
+                endDate = endStr,
                 pressureLevel = getPressureLevel(event)
             )
         }

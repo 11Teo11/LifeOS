@@ -1,8 +1,5 @@
 package com.example.lifeos.ui.studybudget
 
-import android.accounts.AccountManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.ui.calendar.rememberCalendarConnector
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -37,20 +35,14 @@ fun CalendarScreen(
     viewModel: CalendarViewModel,
     modifier: Modifier = Modifier
 ) {
-    val calendarState by viewModel.calendarState.collectAsState()
+    val connector = rememberCalendarConnector(viewModel)
+    val calendarState = connector.state
     val events by viewModel.academicEvents.getAllEvents().collectAsState(initial = emptyList())
     var showAddDialog by remember { mutableStateOf(false) }
     var eventToEdit by remember { mutableStateOf<AcademicEvent?>(null) }
     var showCalendarView by remember { mutableStateOf(false) }
     var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-
-    val accountPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-        if (accountName != null) viewModel.syncCalendar(accountName)
-    }
 
     val eventsByDate = remember(events) {
         events.groupBy { event ->
@@ -95,7 +87,7 @@ fun CalendarScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
-                onClick = { accountPickerLauncher.launch(viewModel.getAccountPickerIntent()) },
+                onClick = connector.onConnectClick,
                 modifier = Modifier.weight(1f)
             ) { Text("Sync Google") }
             OutlinedButton(
@@ -133,9 +125,6 @@ fun CalendarScreen(
                     Text(state.message, modifier = Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer)
                 }
                 TextButton(onClick = { viewModel.resetState() }) { Text("Try again") }
-            }
-            is CalendarState.NeedsConsent -> {
-                LaunchedEffect(state) { accountPickerLauncher.launch(state.intent) }
             }
             else -> {}
         }
