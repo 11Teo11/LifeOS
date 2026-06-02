@@ -13,7 +13,7 @@ import java.net.URL
 class OllamaService(private val host: String = "10.0.2.2") {
 
     companion object {
-        private const val MODEL = "llama3.2:1b"
+        private const val MODEL = "mistral"
     }
 
     private val baseUrl get() = "http://$host:11434"
