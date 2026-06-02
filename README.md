@@ -68,6 +68,9 @@ Monitorizarea stării de bine.
 - Înregistrare zilnică: ore de somn, nivel de energie (1-10), nivel de stres (1-10), simptome
 - Reminder zilnic la 10:00 dacă nu s-a făcut check-in
 - Detectare automată a pattern-urilor negative prin Agent 1
+- Grafic de tendințe (ultimele 7 zile): energie (teal) și somn (mov), construit cu Jetpack Compose Canvas
+- Punctele de energie sub 4/10 sunt marcate vizual cu un halo roșu de avertizare
+- Graficul se afișează doar dacă există minimum 3 zile de date înregistrate
 
 ### ⚙️ Settings
 Configurare bugete și setări Ollama.
@@ -158,13 +161,54 @@ Versiunea curentă: **8**
 
 | Agent | Owner | Model | Trigger | Funcție |
 |---|---|---|---|---|
-| Agent 1 — Pattern Detector | Roberta | Mistral 7B | După fiecare check-in | Detectează pattern-uri negative pe 14 zile de check-in |
+| Agent 1 — Pattern Detector | Roberta | Mistral 7B (fallback: rule-based) | După fiecare check-in | Detectează pattern-uri negative (somn/energie/stres) pe fereastra de 14 zile; severitate: Low / Medium / High; UI feedback cu carduri colorate (roșu/portocaliu/galben) |
 | Agent 2 — Budget Analyzer | Teo | llama3.2:1b | După import CSV | Clasifică tranzacțiile pe categorii |
 | Agent 3 — Academic Context | Teo | - | Weekly + calendar sync | Compară cheltuielile normale vs perioadele de examen |
 | Agent 4 — Day Planner | Erika | - | On-demand | Generează sugestii pentru ziua următoare |
-| Agent 5 — Accountability Coach | Erika | Mistral 7B | 21:00 daily | Generează raportul serii |
+| Agent 5 — Accountability Coach | Erika | Mistral 7B (fallback: rule-based) | 21:00 daily | Generează raportul serii; dacă lipsește check-in-ul → notificare redirecționată la tab Wellness; dacă lipsesc tranzacțiile → redirecționare la tab Budget |
 
 Toți agenții au fallback rule-based dacă Ollama nu este disponibil.
+
+> **Notă Agent 1:** Calea LLM (Ollama) este implementată dar dezactivată în build-ul curent (`tryOllama` returnează `null`). Sistemul rulează exclusiv pe fallback rule-based (detecție streak ≥ 3 zile consecutive). Pentru a activa LLM-ul, decomentează apelul din `PatternDetectorAgent.kt` și asigură-te că serverul Ollama rulează.
+
+---
+
+## Testare
+
+### Strategie pe trei niveluri
+
+| Nivel | Tip | Scopul |
+|---|---|---|
+| 1 | Unit Tests (JUnit + MockK) | Logică pură din Repositories și ViewModels |
+| 2 | Instrumented Tests (Espresso / Compose Test) | Verificarea UI pe emulator |
+| 3 | Agent Evals | Testarea prompt-urilor și a mecanismelor de fallback pentru Agent 1 și Agent 5 |
+
+### Agent Evals — ce se testează
+
+**Agent 1 — PatternDetectorAgent**
+- **Calea LLM:** verificarea parsării corecte a răspunsului JSON returnat de Ollama
+- **Calea fallback:** simularea căderii serverului + verificarea logicii de streak (ex: 3 zile consecutive cu somn < 6h)
+- **Date de test:** set controlat care include cazuri limită — exact 2 zile de date (sub pragul de 3), valori extreme (energie 1/10, stres 10/10)
+- **Tooling:** `MockWebServer` (OkHttp) pentru simularea răspunsurilor HTTP fără server Ollama activ
+
+**Agent 5 — EveningReportAgent**
+- Validarea emisiei corecte a `StateFlow` din `ReportViewModel`
+- Testarea scenariilor de date lipsă (fără check-in, fără tranzacții)
+
+### Cum să rulezi testele
+
+```bash
+# Unit tests
+./gradlew test
+
+# Instrumented tests (necesită emulator pornit)
+./gradlew connectedAndroidTest
+
+# Forțează reconstrucția bazei de date de test după modificări de schemă Room
+./gradlew assembleDebugAndroidTest
+```
+
+> **Atenție:** Orice modificare a schemei Room necesită incrementarea versiunii în `AppDatabase` **și** recompilarea testelor instrumentate — altfel acestea vor eșua cu `IllegalStateException`.
 
 ---
 
@@ -230,6 +274,18 @@ Adaugă regula de firewall pentru portul 11434:
 ```powershell
 netsh advfirewall firewall add rule name="Ollama" dir=in action=allow protocol=TCP localport=11434
 ```
+
+### Manifest — permisiune HTTP necriptată
+
+Conexiunea la Ollama se face prin HTTP (nu HTTPS). Pe Android 9+, traficul cleartext este blocat implicit. Asigură-te că `AndroidManifest.xml` conține:
+
+```xml
+<application
+    android:usesCleartextTraffic="true"
+    ...>
+```
+
+Fără această setare, `OllamaClient` va eșua silențios pe dispozitivele reale chiar dacă serverul rulează corect.
 
 ### Configurare Google OAuth (per developer)
 Fiecare developer trebuie să își înregistreze SHA-1 fingerprint-ul:
