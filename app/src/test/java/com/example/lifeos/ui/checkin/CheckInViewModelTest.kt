@@ -47,7 +47,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun `initial state has default values`() {
+    fun initialState_hasDefaultValues() {
         val state = viewModel.uiState.value
         assertEquals(7f, state.sleepHours)
         assertEquals(5, state.energyLevel)
@@ -58,25 +58,25 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun `setSleepHours updates sleepHours in state`() {
+    fun setSleepHours_updatesSleepHoursInState() {
         viewModel.setSleepHours(6.5f)
         assertEquals(6.5f, viewModel.uiState.value.sleepHours)
     }
 
     @Test
-    fun `setEnergyLevel updates energyLevel in state`() {
+    fun setEnergyLevel_updatesEnergyLevelInState() {
         viewModel.setEnergyLevel(8)
         assertEquals(8, viewModel.uiState.value.energyLevel)
     }
 
     @Test
-    fun `setStressLevel updates stressLevel in state`() {
+    fun setStressLevel_updatesStressLevelInState() {
         viewModel.setStressLevel(3)
         assertEquals(3, viewModel.uiState.value.stressLevel)
     }
 
     @Test
-    fun `setDate updates selectedDate and clears errors`() {
+    fun setDate_updatesSelectedDateAndClearsErrors() {
         val newDate = LocalDate.of(2024, 3, 15)
         viewModel.setDate(newDate)
 
@@ -87,20 +87,20 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun `toggleSymptom adds symptom when not present`() {
+    fun toggleSymptom_addsSymptomWhenNotPresent() {
         viewModel.toggleSymptom("headache")
         assertTrue(viewModel.uiState.value.selectedSymptoms.contains("headache"))
     }
 
     @Test
-    fun `toggleSymptom removes symptom when already present`() {
+    fun toggleSymptom_removesSymptomWhenAlreadyPresent() {
         viewModel.toggleSymptom("headache")
         viewModel.toggleSymptom("headache")
         assertFalse(viewModel.uiState.value.selectedSymptoms.contains("headache"))
     }
 
     @Test
-    fun `toggleSymptom can track multiple symptoms independently`() {
+    fun toggleSymptomCanTrackMultipleSymptomsIndependently() {
         viewModel.toggleSymptom("headache")
         viewModel.toggleSymptom("fatigue")
         viewModel.toggleSymptom("headache")  // remove headache
@@ -111,7 +111,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun `saveCheckIn sets duplicateError when entry already exists for that date`() = runTest {
+    fun saveCheckIn_setsDuplicateErrorWhenEntryAlreadyExistsForThatDate() = runTest {
         val existing = DailyCheckIn(
             date = LocalDate.now().toString(),
             timestamp = System.currentTimeMillis(),
