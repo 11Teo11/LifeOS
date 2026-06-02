@@ -15,7 +15,7 @@ class CsvParserParametrizedTest(
 
     companion object {
         private const val VALID_HEADER =
-            "Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency"
+            "Date,Description,Category,Money in/out"
 
         @JvmStatic
         @Parameterized.Parameters(name = "amount=\"{0}\" → success={1}")
@@ -26,7 +26,7 @@ class CsvParserParametrizedTest(
             arrayOf<Any>("999999.99", true,  999999.99),
             arrayOf<Any>("",          false, 0.0),
             arrayOf<Any>("abc",       false, 0.0),
-            arrayOf<Any>("100.50.25", false,  0.0)
+            arrayOf<Any>("100.50.25", false, 0.0)
         )
     }
 
@@ -34,7 +34,7 @@ class CsvParserParametrizedTest(
 
     @Test
     fun `amount is parsed correctly or row is skipped`() {
-        val csv = "$VALID_HEADER\nCARD_PAYMENT,Current,2024-01-15,2024-01-15,Test,$amountStr,0.00,RON"
+        val csv = "$VALID_HEADER\n2024-01-15,Test,Food,$amountStr"
         val result = parser.parseRevolutCsv(csv.byteInputStream())
 
         if (expectSuccess) {

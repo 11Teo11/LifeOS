@@ -30,7 +30,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `checkBudgetStatus returns NoBudget when no budget set`() = runTest {
+    fun checkBudgetStatus_returnsNoBudgetWhenNoBudgetSet() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns null
 
         val status = repository.checkBudgetStatus("food")
@@ -39,7 +39,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `checkBudgetStatus returns Ok when spent is below 80 percent`() = runTest {
+    fun checkBudgetStatus_returnsOkWhenSpentIsBelow80Percent() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns testBudget
         every { transactionDao.getTransactionsByCategory("food") } returns flowOf(
             listOf(transaction(amount = -70.0))   // 70% of 100
@@ -52,7 +52,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `checkBudgetStatus returns Warning when spent is between 80 and 100 percent`() = runTest {
+    fun checkBudgetStatusReturnsWarningWhenSpentIsBetween80And100Percent() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns testBudget
         every { transactionDao.getTransactionsByCategory("food") } returns flowOf(
             listOf(transaction(amount = -85.0))   // 85% of 100
@@ -65,7 +65,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `checkBudgetStatus returns Exceeded when spent is at or above 100 percent`() = runTest {
+    fun checkBudgetStatus_returnsExceededWhenSpentIsAtOrAbove100Percent() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns testBudget
         every { transactionDao.getTransactionsByCategory("food") } returns flowOf(
             listOf(transaction(amount = -120.0))  // 120% of 100
@@ -78,7 +78,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `getSpentAmount ignores positive transactions (income)`() = runTest {
+    fun getSpentAmount_ignoresPositiveTransactions() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns testBudget
         every { transactionDao.getTransactionsByCategory("food") } returns flowOf(
             listOf(
@@ -96,7 +96,7 @@ class BudgetTargetRepositoryTest {
     }
 
     @Test
-    fun `checkBudgetStatus at exactly 80 percent returns Warning`() = runTest {
+    fun checkBudgetStatusAtExactly80PercentReturnsWarning() = runTest {
         coEvery { budgetTargetDao.getBudgetForCategory("food") } returns testBudget
         every { transactionDao.getTransactionsByCategory("food") } returns flowOf(
             listOf(transaction(amount = -80.0))  // exactly 80%

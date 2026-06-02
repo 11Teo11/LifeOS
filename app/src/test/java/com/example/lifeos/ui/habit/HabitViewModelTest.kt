@@ -16,7 +16,6 @@ import java.util.Calendar
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @OptIn(ExperimentalCoroutinesApi::class)
-
 class HabitViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
