@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.lifeos.data.agent.Agent3AcademicContext
+import com.example.lifeos.data.agent.Agent3Result
 import com.example.lifeos.data.db.AppDatabase
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.Transaction
+import com.example.lifeos.data.preferences.OllamaPreferences
 import com.example.lifeos.data.repository.TransactionRepository
 import com.example.lifeos.util.CsvParseResult
 import com.example.lifeos.util.CsvParser
@@ -17,6 +20,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.InputStream
@@ -53,21 +58,25 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
     )
     private val csvParser = CsvParser()
     private val agent2Classifier = Agent2Classifier(context)
+    private val db = AppDatabase.getDatabase(context)
+    private val ollamaPreferences = OllamaPreferences(context)
+
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
 
+    private val _agent3Result = MutableStateFlow<Agent3Result?>(null)
+    val agent3Result: StateFlow<Agent3Result?> = _agent3Result.asStateFlow()
+
     val transactions = repository.allTransactions
 
-    val totalBudgetTarget: Flow<BudgetTarget?> = AppDatabase.getDatabase(context)
-        .budgetTargetDao()
+    val totalBudgetTarget: Flow<BudgetTarget?> = db.budgetTargetDao()
         .getAllBudgetTargets()
         .map { targets -> targets.find { it.category == "💰 Total" } }
 
     val totalSpent: Flow<Double> = transactions
         .map { list -> list.sumOf { Math.abs(it.amount) } }
 
-    val allBudgetTargets: Flow<List<BudgetTarget>> = AppDatabase.getDatabase(context)
-        .budgetTargetDao()
+    val allBudgetTargets: Flow<List<BudgetTarget>> = db.budgetTargetDao()
         .getAllBudgetTargets()
         .map { targets ->
             targets.sortedByDescending { it.category == "💰 Total" }
@@ -76,14 +85,29 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
     val spentPerCategory: Flow<Map<String, Double>> = transactions
         .map { list ->
             val map = mutableMapOf<String, Double>()
-            // Total = suma tuturor
             map["💰 Total"] = list.sumOf { Math.abs(it.amount) }
-            // Per categorie
             list.groupBy { it.category }.forEach { (cat, txs) ->
                 map[cat] = txs.sumOf { Math.abs(it.amount) }
             }
             map
         }
+
+    init {
+        // Recalculam Agent 3 cand se schimba tranzactiile sau evenimentele
+        viewModelScope.launch {
+            combine(
+                transactions,
+                db.academicEventDao().getAllEvents()
+            ) { txs, events -> Pair(txs, events) }
+                .collect { (txs, events) ->
+                    val host = ollamaPreferences.ollamaHost.first()
+                    val result = withContext(Dispatchers.IO) {
+                        Agent3AcademicContext.analyze(txs, events, host)
+                    }
+                    _agent3Result.value = result
+                }
+        }
+    }
 
     fun previewCsv(inputStream: InputStream) {
         viewModelScope.launch {
@@ -135,11 +159,9 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
                             }
                         }
 
-                        // Clasificare Agent 2
                         val classified = agent2Classifier.classifyTransactions(toInsert)
                         repository.insertTransactions(classified)
 
-                        // Trigger budget check
                         val budgetCheckRequest = OneTimeWorkRequestBuilder<BudgetCheckWorker>()
                             .build()
                         WorkManager.getInstance(context).enqueue(budgetCheckRequest)
@@ -172,13 +194,13 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
             _importState.value = ImportState.Loading
             try {
                 val allTransactions = withContext(Dispatchers.IO) {
-                    AppDatabase.getDatabase(context).transactionDao().getAllTransactionsOnce()
+                    db.transactionDao().getAllTransactionsOnce()
                 }
                 val notCorrected = allTransactions.filter { !it.isManuallyCorrected }
                 val classified = agent2Classifier.classifyTransactions(notCorrected)
                 withContext(Dispatchers.IO) {
                     classified.forEach {
-                        AppDatabase.getDatabase(context).transactionDao().updateTransaction(it)
+                        db.transactionDao().updateTransaction(it)
                     }
                 }
                 _importState.value = ImportState.Idle
@@ -187,7 +209,6 @@ class StudyBudgetViewModel(private val context: Context) : ViewModel() {
             }
         }
     }
-
 
     fun resetState() {
         _importState.value = ImportState.Idle

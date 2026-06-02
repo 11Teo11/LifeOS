@@ -11,11 +11,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.example.lifeos.data.agent.Agent3Result
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.Transaction
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 
 @Composable
 fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modifier) {
@@ -24,6 +33,7 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
     val allBudgetTargets by viewModel.allBudgetTargets.collectAsState(initial = emptyList())
     val spentPerCategory by viewModel.spentPerCategory.collectAsState(initial = emptyMap())
+    val agent3Result by viewModel.agent3Result.collectAsState(initial = null)
     var transactionToCorrect by remember { mutableStateOf<Transaction?>(null) }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -65,6 +75,16 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
                     val spent = spentPerCategory[target.category] ?: 0.0
                     CategoryBudgetCard(target = target, spent = spent)
                     Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+
+        // Agent 3 — Academic Context Chart
+        agent3Result?.let { result ->
+            if (result.hasData) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AcademicSpendingCard(result = result)
                 }
             }
         }
@@ -176,6 +196,100 @@ fun StudyBudgetScreen(viewModel: StudyBudgetViewModel, modifier: Modifier = Modi
             }
         )
     }
+}
+
+@Composable
+fun AcademicSpendingCard(result: Agent3Result) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Academic Spending Context",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SpendingBarChart(
+                normalAvg = result.avgNormalDay,
+                examAvg = result.avgExamDay,
+                mediumAvg = result.avgMediumDay
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "💡 ${result.insightSentence}",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SpendingBarChart(
+    normalAvg: Double,
+    examAvg: Double,
+    mediumAvg: Double
+) {
+    val normalColor = Color(0xFF6750A4).toArgb()
+    val mediumColor = Color(0xFFF57F17).toArgb()
+    val examColor = Color(0xFFB71C1C).toArgb()
+
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        factory = { context ->
+            BarChart(context).apply {
+                description.isEnabled = false
+                legend.isEnabled = true
+                setTouchEnabled(false)
+                setDrawGridBackground(false)
+                axisRight.isEnabled = false
+
+                xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    setDrawGridLines(false)
+                    granularity = 1f
+                    valueFormatter = IndexAxisValueFormatter(
+                        arrayOf("Normal", "Deadline", "Exam")
+                    )
+                }
+
+                axisLeft.apply {
+                    setDrawGridLines(true)
+                    axisMinimum = 0f
+                }
+            }
+        },
+        update = { chart ->
+            val entries = listOf(
+                BarEntry(0f, normalAvg.toFloat()),
+                BarEntry(1f, mediumAvg.toFloat()),
+                BarEntry(2f, examAvg.toFloat())
+            )
+
+            val dataSet = BarDataSet(entries, "Avg daily spend (RON)").apply {
+                colors = listOf(normalColor, mediumColor, examColor)
+                valueTextSize = 10f
+                setDrawValues(true)
+            }
+
+            chart.data = BarData(dataSet).apply {
+                barWidth = 0.5f
+            }
+            chart.invalidate()
+        }
+    )
 }
 
 @Composable
