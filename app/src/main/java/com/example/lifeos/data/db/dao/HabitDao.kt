@@ -38,4 +38,7 @@ interface HabitDao {
 
     @Query("DELETE FROM habit_logs WHERE completedAt < :startOfDay")
     suspend fun deleteOldLogs(startOfDay: Long)
+
+    @Query("SELECT * FROM habit_logs WHERE completedAt >= :sinceTimestamp")
+    suspend fun getLogsSince(sinceTimestamp: Long): List<HabitLog>
 }

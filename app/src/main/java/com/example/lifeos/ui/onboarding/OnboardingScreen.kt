@@ -1,8 +1,5 @@
 package com.example.lifeos.ui.onboarding
 
-import android.accounts.AccountManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -12,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.lifeos.ui.calendar.rememberCalendarConnector
 import com.example.lifeos.ui.studybudget.CalendarState
 import com.example.lifeos.ui.studybudget.CalendarViewModel
 
@@ -22,20 +20,9 @@ fun OnboardingScreen(
     onOnboardingComplete: () -> Unit,
     isReEntry: Boolean = false
 ) {
-    val accountPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-        if (accountName != null) calendarViewModel.syncCalendar(accountName)
-    }
+    val connector = rememberCalendarConnector(calendarViewModel)
+    val calendarState = connector.state
 
-    val calendarState by calendarViewModel.calendarState.collectAsState()
-
-    LaunchedEffect(calendarState) {
-        if (calendarState is CalendarState.NeedsConsent) {
-            accountPickerLauncher.launch((calendarState as CalendarState.NeedsConsent).intent)
-        }
-    }
     val currentStep by viewModel.currentStep.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val monthlyBudget by viewModel.monthlyBudget.collectAsState()
@@ -92,8 +79,8 @@ fun OnboardingScreen(
                 showError = showNameError
             )
             1 -> StepCalendar(
-                isConnected = calendarState is CalendarState.Success,
-                onConnectCalendar = { accountPickerLauncher.launch(calendarViewModel.getAccountPickerIntent()) },
+                state = calendarState,
+                onConnectCalendar = connector.onConnectClick,
                 onSkipCalendar = { viewModel.nextStep() }
             )
             2 -> StepBudget(
@@ -173,7 +160,7 @@ fun StepProfile(userName: String, onNameChange: (String) -> Unit, showError: Boo
 
 @Composable
 fun StepCalendar(
-    isConnected: Boolean,
+    state: CalendarState,
     onConnectCalendar: () -> Unit,
     onSkipCalendar: () -> Unit
 ) {
@@ -198,37 +185,72 @@ fun StepCalendar(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (isConnected) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        when (state) {
+            is CalendarState.Success -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "✓",
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Calendar connected successfully",
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+            is CalendarState.Loading, is CalendarState.NeedsConsent -> {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Connecting to Google Calendar…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            }
+            is CalendarState.Error -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
                     Text(
-                        text = "✓",
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Calendar connected successfully",
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        text = state.message,
+                        modifier = Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(onClick = onConnectCalendar) {
+                    Text("Try again")
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                TextButton(onClick = onSkipCalendar) {
+                    Text("I'll do this later")
+                }
             }
-        } else {
-            OutlinedButton(onClick = onConnectCalendar) {
-                Text("Connect Google Calendar")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            TextButton(onClick = onSkipCalendar) {
-                Text("I'll do this later")
+            else -> {
+                OutlinedButton(onClick = onConnectCalendar) {
+                    Text("Connect Google Calendar")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = onSkipCalendar) {
+                    Text("I'll do this later")
+                }
             }
         }
     }
