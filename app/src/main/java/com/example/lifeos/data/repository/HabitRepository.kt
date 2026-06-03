@@ -28,4 +28,7 @@ class HabitRepository(private val habitDao: HabitDao) {
     suspend fun deleteOldLogs(startOfDay: Long) {
         habitDao.deleteOldLogs(startOfDay)
     }
+
+    suspend fun getLogsSince(sinceTimestamp: Long): List<HabitLog> =
+        habitDao.getLogsSince(sinceTimestamp)
 }

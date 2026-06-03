@@ -4,15 +4,26 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.lifeos.data.db.dao.AcademicEventDao
+import com.example.lifeos.data.db.dao.AgentInsightDao
 import com.example.lifeos.data.db.dao.BudgetTargetDao
-import com.example.lifeos.data.db.dao.TransactionDao
-import com.example.lifeos.data.db.entity.Transaction
-import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.dao.DailyCheckInDao
+import com.example.lifeos.data.db.dao.DayPlanDao
 import com.example.lifeos.data.db.dao.HabitDao
-import com.example.lifeos.data.db.entity.HabitLog
+import com.example.lifeos.data.db.dao.PatternAlertDao
+import com.example.lifeos.data.db.dao.TransactionCorrectionDao
+import com.example.lifeos.data.db.dao.TransactionDao
+import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.AgentInsight
 import com.example.lifeos.data.db.entity.BudgetTarget
 import com.example.lifeos.data.db.entity.DailyCheckIn
-import com.example.lifeos.data.db.entity.AcademicEvent
+import com.example.lifeos.data.db.entity.DayPlan
+import com.example.lifeos.data.db.entity.DayPlanSuggestion
+import com.example.lifeos.data.db.entity.Habit
+import com.example.lifeos.data.db.entity.HabitLog
+import com.example.lifeos.data.db.entity.PatternAlert
+import com.example.lifeos.data.db.entity.Transaction
+import com.example.lifeos.data.db.entity.TransactionCorrection
 
 @Database(
     entities = [
@@ -21,9 +32,14 @@ import com.example.lifeos.data.db.entity.AcademicEvent
         Habit::class,
         HabitLog::class,
         DailyCheckIn::class,
-        AcademicEvent::class
+        AcademicEvent::class,
+        TransactionCorrection::class,
+        AgentInsight::class,
+        PatternAlert::class,
+        DayPlan::class,
+        DayPlanSuggestion::class
     ],
-    version = 3,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,9 +47,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun habitDao(): HabitDao
     abstract fun budgetTargetDao(): BudgetTargetDao
-    // TODO: DAO for DailyCheckIn and AcademicEvent
-//    abstract fun dailyCheckInDao(): DailyCheckInDao
-//    abstract fun academicEventDao(): AcademicEventDao
+    abstract fun academicEventDao(): AcademicEventDao
+    abstract fun dailyCheckInDao(): DailyCheckInDao
+    abstract fun transactionCorrectionDao(): TransactionCorrectionDao
+    abstract fun agentInsightDao(): AgentInsightDao
+    abstract fun patternAlertDao(): PatternAlertDao
+    abstract fun dayPlanDao(): DayPlanDao
 
     companion object {
         @Volatile

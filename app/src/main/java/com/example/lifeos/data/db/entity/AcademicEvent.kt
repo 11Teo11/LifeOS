@@ -10,5 +10,6 @@ data class AcademicEvent(
     val title: String,
     val startDate: String,
     val endDate: String,
-    val isHighPressure: Boolean = false
+    val pressureLevel: String = "low",
+    val isManuallyAdded: Boolean = false
 )

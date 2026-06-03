@@ -22,6 +22,10 @@ class BudgetTargetRepository(
     }
 
     suspend fun getSpentAmountForCategory(category: String): Double {
+        if (category == "💰 Total") {
+            val allTransactions = transactionDao.getAllTransactionsOnce()
+            return allTransactions.filter { it.amount < 0 }.sumOf { Math.abs(it.amount) }
+        }
         val transactions = transactionDao.getTransactionsByCategory(category).first()
         return transactions
             .filter { it.amount < 0 }
