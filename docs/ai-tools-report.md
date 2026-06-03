@@ -183,9 +183,146 @@ Claude a generat:
 
 ---
 
-## Erika Plesca — Habit Tracker, Agent 5, Onboarding
+## Erika Plesca — Habit Tracker, Agent 4, Onboarding
 
-<!-- Erika completează această secțiune -->
+### 1. Design și arhitectură — Habit Tracker (HT-01)
+
+**Tool folosit:** Claude
+
+Am folosit Claude pentru a proiecta structura modulului Habit Tracker înainte de a scrie cod. Am descris cerința („utilizatorul își creează habit-uri zilnice și le bifează din UI; bifările se resetează la miezul nopții") și Claude a propus structura de entități Room, fluxul ViewModel → Repository → DAO și schema bottom navigation-ului.
+
+Exemplu de prompt:
+> "Am o aplicație Android cu Jetpack Compose și Room. Vreau un modul de tracking habit-uri zilnice. Userul creează habit-uri, le bifează în fiecare zi, iar bifările trebuie să se reseteze la 00:00. Ce entități Room am nevoie și cum fac reset-ul automat?"
+
+Claude a propus separarea în două entități (`Habit` pentru definiție, `HabitLog` pentru bifări per zi), folosind `WorkManager` cu `PeriodicWorkRequest` pentru reset.
+
+---
+
+### 2. Implementare — Habit Tracker (HT-01)
+
+**Tool folosit:** Claude + GitHub Copilot
+
+Claude a scris structura inițială, iar Copilot a sugerat completări inline pe măsură ce scriam.
+
+**Ce a generat AI-ul:**
+- `Habit` și `HabitLog` Room entities cu Foreign Key și `onDelete = CASCADE`
+- `HabitDao` cu query-uri pentru habit-urile active, log-urile zilei curente și ștergerea log-urilor vechi
+- `HabitRepository` ca wrapper peste DAO
+- `HabitViewModel` cu `StateFlow` pentru habit-uri și set-ul de id-uri bifate azi
+- `HabitScreen` în Jetpack Compose cu `LazyColumn` și `Checkbox`
+- `HabitResetWorker` programat la miezul nopții via `PeriodicWorkRequest`
+- Tema pastel temporară (`LifeOSTheme`) și integrarea în `bottomBar` cu `NavigationBar`
+
+---
+
+### 3. Implementare — Onboarding flow (ON-01)
+
+**Tool folosit:** Claude
+
+Onboarding-ul are 3 pași (Profile → Calendar → Budget) și trebuie să persiste starea în `DataStore` ca să nu se reseteze între restart-uri. Am folosit Claude pentru a proiecta state machine-ul și pentru a scrie `OnboardingViewModel`.
+
+**Ce a generat Claude:**
+- `OnboardingScreen` cu Composable-uri separate pentru fiecare pas (`StepProfile`, `StepCalendar`, `StepBudget`)
+- `OnboardingViewModel` cu `currentStep`, `userName`, `monthlyBudget` ca `StateFlow`
+- `OnboardingPreferences` (DataStore) cu flag-uri `isCompleted` și `isFullyCompleted`
+- Logica de validare a numelui și a sumei înainte de avansare la următorul pas
+- Inserarea automată a unui `BudgetTarget` din pasul final, înainte ca navigarea să se închidă
+- Opțiunea „Resume onboarding" din Settings, pentru re-intrarea în flow după ce userul l-a sărit inițial
+
+Am iterat pe Claude pentru a corecta un bug în care navigarea închidea onboarding-ul înainte ca `BudgetTarget` să apuce să fie salvat în DB.
+
+---
+
+### 4. Implementare — Calendar success feedback (ON-01 follow-up)
+
+**Tool folosit:** Claude
+
+În prima versiune a pasului „Connect Google Calendar" din onboarding, dacă userul refuza permisiunea sau OAuth-ul eșua, ecranul rămânea blocat fără feedback. Claude a propus refactor-ul în care fluxul OAuth + consent este extras într-un composable reutilizabil.
+
+**Ce a generat Claude:**
+- `CalendarConnector.kt` — composable cu `rememberLauncherForActivityResult` care wraps account picker + consent intent și expune un state object (`state`, `onConnectClick`, `onReset`)
+- Reutilizarea aceluiași connector în `OnboardingScreen` și `CalendarScreen` pentru consistență
+- Stările Loading / Error / Success cu carduri colorate în Material 3
+- Persistarea ultimului cont selectat în `SharedPreferences` pentru ca retry-ul după refuz de consent să nu mai ceară din nou alegerea contului
+- Null-safety în `GoogleCalendarService.fetchEvents()` pentru cazurile în care `event.start.dateTime` poate fi `null`
+
+În același PR, Claude a identificat că `google-services.json` fusese commit-at din greșeală în root-ul repo-ului (în loc de doar `app/`) și a propus ștergerea lui plus update la `.gitignore` pentru a ignora `.claude/`.
+
+---
+
+### 5. Implementare — Agent 4 Day Planner (HT-02)
+
+**Tool folosit:** Claude
+
+Agent 4 e agentul de orchestration care generează 3-5 sugestii pentru ziua de mâine, folosind datele de la Agent 1 (PatternAlert), Agent 2 (tranzacții), Agent 3 (evenimente academice) și Habit Tracker. Am cerut Claude să oglindească pattern-ul lui `EveningReportAgent` (Agent 5 zilnic).
+
+**Ce a generat Claude:**
+- `DayPlannerAgent.kt` cu sufficiency gate (≥3 daily check-ins), prompt builder care include lista oficială de categorii de buget din `TEAM_GUIDELINES §13`, parser de JSON cu coerciune pe valori invalide, și fallback rule-based
+- **Energy guardrail**: dacă media de energie pe ultimele 3 zile e <5/10, agentul filtrează sugestiile cu `effort: high` și forțează cel puțin o sugestie cu `category: recovery` (atât în path-ul LLM cât și în post-validation)
+- `DayPlan` + `DayPlanSuggestion` ca entități Room cu Foreign Key, ca să poată fi editate per sugestie
+- `DayPlanCard` ca UI inline în topul `HabitScreen`, cu stări Idle / Loading / InsufficientData / Draft / Saved / Error și `OutlinedTextField` pentru fiecare sugestie
+- `DayPlanViewModel` care colectează input-ul din 6 repository-uri diferite, citește host-ul Ollama din `OllamaPreferences` și salvează drafts transactional
+- 11 teste unitare pe path-ul rule-based, inclusiv test pentru guardrail-ul de energie (ambele direcții) și pentru parsing-ul JSON cu markdown fences
+
+Am descoperit cu Claude că `org.json.JSONObject` este stubbed în Android unit tests (aruncă `RuntimeException: Method not mocked`), iar fix-ul a fost adăugarea `testImplementation("org.json:json")` declarată în `libs.versions.toml` conform regulilor din §3.
+
+Promptul pentru Ollama l-am iterat de două ori:
+- V1: prompt generic → LLM-ul inventa categorii de buget care nu existau în aplicație
+- V2: adăugat lista exactă de categorii (`Food, Transport, Entertainment, Shopping, Health, Education, Other`) ca `Budget category options` în prompt → output consistent
+
+---
+
+### 6. Configurare Ollama pe macOS pentru testing local
+
+**Tool folosit:** Claude
+
+Pentru a testa Agent 4 cu LLM real, am avut nevoie să instalez Ollama local. Claude m-a ghidat prin setup:
+- `brew install ollama` + `brew services start ollama` (auto-start la login)
+- `ollama pull mistral` (~4GB) și verificarea cu `curl localhost:11434/api/tags`
+- Configurarea host-ului default `10.0.2.2` care funcționează automat din emulator (loopback la host-ul Mac-ului)
+- Pentru testing pe device real, schimbarea host-ului din Settings → Budget → Ollama host la IP-ul de LAN al Mac-ului
+
+---
+
+### 7. Source control — Commit messages
+
+**Tool folosit:** GitHub Copilot
+
+GitHub Copilot a generat automat mesajele de commit pe baza diff-ului stagiat, în formatul convenit cu echipa (`feat(HT-01)`, `fix(ON-01)`, `chore`, etc.).
+
+Exemple de mesaje generate de Copilot:
+```
+feat(HT-01): add Habit and HabitLog Room entities
+feat(ON-01): complete onboarding flow at app start with 3 steps and DataStore
+fix(ON-01): insert BudgetTarget before triggering navigation on complete
+feat(HT-02): add Agent 4 Day Planner and tomorrow's plan UI
+```
+
+---
+
+### 8. Debugging
+
+**Tool folosit:** Claude
+
+**Probleme rezolvate cu AI:**
+
+- **`Resource and asset merger: Duplicate resources`** la `values.xml` și `values 2.xml` — Claude a diagnosticat că fișierele cu ` 2.xml` în nume sunt duplicate generate de macOS Finder / iCloud Drive (proiectul stă în `~/Desktop`, sincronizat cu iCloud). Fix imediat: `./gradlew clean`. Fix permanent recomandat: mutarea proiectului în afara folderului Desktop sau dezactivarea „Desktop & Documents Folders" în iCloud
+- **Gradle build timeouts pe primul build** — Claude a propus bumping de JVM heap (`-Xmx2048m` → `-Xmx4096m`) și activarea `org.gradle.caching=true` + `org.gradle.configuration-cache=true` în `gradle.properties`
+- **`Room cannot verify data integrity`** la primul start după adăugarea unei entități noi — Claude a reamintit regula din `TEAM_GUIDELINES §2` despre incrementarea `version` în `@Database`
+- **Android Studio shows red errors but CLI build is green** — Claude a indicat că e indexare stale după adăugarea de fișiere noi; fix-ul e `File → Sync Project with Gradle Files`, sau în cazuri persistente `Invalidate Caches and Restart`
+
+---
+
+### 9. Documentație și Pull Requests
+
+**Tool folosit:** Claude
+
+Claude a generat descrierile pentru Pull Request-urile mele (titlu + summary + test plan), inclusiv:
+- Identificarea conflictelor de merge prevăzute (versiunea `AppDatabase` între HT-02 și AC-02 / Agent 5 care vor fi mergeate consecutiv)
+- Note despre limitări cunoscute (de ex. că Agent 4 folosește total daily outflow în loc de o categorie specifică precum „food delivery" pentru că Agent 2 încă nu clasifică tranzacțiile)
+- Test plan-uri cu pași concreți pentru reviewer
+
+---
 
 ---
 
