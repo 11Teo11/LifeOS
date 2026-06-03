@@ -177,9 +177,192 @@ Claude a generat:
 
 ---
 
-## Roberta Virghileanu — WellCheck, Check-In, Agent 1
+## Roberta Virghileanu — WellCheck, Check-In, Agent 1, Agent 5
 
-<!-- Roberta completează această secțiune -->
+### 1. Design și arhitectură — Daily Check-In
+
+**Tool folosit:** Claude
+
+Înainte de a începe implementarea, am folosit Claude pentru a proiecta modulul Daily Check-In. I-am oferit ca input contextul întregului repository, regulile din `TEAM_GUIDELINES.md` și specificațiile tehnice ale task-ului, cerându-i explicit să citească mai întâi codul scris de colegi pentru a menține consistența și a nu suprascrie funcționalități existente.
+
+**Strategie de prompt:** „role-play" (AI-ul ca senior dev) + context-loading (lipirea regulilor de echipă în prompt) + cerere de respectare a structurii deja existente în repo.
+
+Claude a propus structura: entitate `DailyCheckIn` (sleep, energy, stress, simptome), DAO cu query-uri pentru ultimele 14 zile, `WorkManager` pentru reminder la ora 10:00 și UI-ul în Jetpack Compose.
+
+---
+
+### 2. Implementare — Daily Check-In (ON-03)
+
+**Tool folosit:** Claude
+
+**Ce a generat Claude:**
+- `DailyCheckIn` Room entity + `DailyCheckInDao` cu query-uri pentru ferestre temporale (7/14 zile)
+- `DailyCheckInRepository` ca wrapper
+- `CheckInScreen` în Compose cu sliders pentru sleep/energy/stress și câmp text pentru simptome
+- `CheckInReminderWorker` programat zilnic la 10:00 via `PeriodicWorkRequest`
+- Integrarea în `MainActivity` cu un nou tab în `NavigationBar`
+
+**Probleme întâlnite cu AI-ul:**
+
+**A. Stale context la MainActivity** — Prima variantă generată de AI pentru `MainActivity.kt` era bazată pe date învechite și a șters funcționalitățile de Onboarding și Budget scrise de colege, reducând fișierul de la 300+ linii la ~230. I-am semnalat explicit discrepanța („eu am 300 de linii, tu mi-ai dat 230, ce ai șters?") și AI-ul a regenerat varianta corectă. **Lecție:** AI-ul tinde să simplifice fișiere mari dacă nu îi reamintești constant să păstreze codul existent.
+
+**B. Erori de sintaxă Kotlin** — La pasul DAO, AI-ul a generat cod care a produs erori `Package name does not correspond to the file path` și `';' expected` (confuzie între stil Java și stil Kotlin în secțiuni de import). Rezolvarea a venit după ce am cerut explicit instrucțiunile pas-cu-pas pentru `New → Kotlin Class/File` din Android Studio.
+
+**C. Conflict de importuri** — AI-ul a încercat să folosească importuri statice (`import androidx.work.WorkManager.getInstance`) care intrau în conflict cu apelurile de `context` din Android, necesitând o corecție manuală a structurii clasei.
+
+| Componentă | Contribuție AI | Intervenție umană |
+|---|---|---|
+| Entity / DAO | 95% | 5% (corectare path package) |
+| Worker (logică timp) | 100% | Verificare cu Calendar API |
+| `CheckInScreen` UI | 90% | Ajustare culori |
+| Integrare `MainActivity` | 60% | 4 iterații până la merge corect fără să șteargă munca echipei |
+
+---
+
+### 3. Implementare — Trends Chart cu Jetpack Compose Canvas (WC-02)
+
+**Tool folosit:** Claude
+
+**Decizie tehnologică:** am ales `Compose Canvas` în detrimentul unei librării externe (MPAndroidChart) pentru a păstra aplicația ușoară și pentru a demonstra abilități de low-level drawing.
+
+**Cerințe:** grafic cu linii (energie teal, somn mov), flag vizual roșu pentru energy < 4, afișare doar dacă există minim 3 zile de date.
+
+**Îmbunătățire de context observată:** în această sesiune, AI-ul a respectat corect convențiile din `TEAM_GUIDELINES.md` (branch name `feature/WC-02-wellcheck-chart`, commit prefix `feat(WC-02):`) **fără** să trebuiască să-i reamintesc — semn că strategia de a-l forța să citească regulile înainte de cod începe să dea rezultate.
+
+**Ce a generat Claude:**
+- Calcul corect al proporțiilor de scalare (`val maxY = 12f`)
+- Padding-urile pentru etichetele axelor
+- Logica de „warning halo" (cerc roșu) pentru punctele critice de energie
+- `sortedBy` în ViewModel pentru ordine cronologică stânga-dreapta pe axa X
+- `try-catch` la `LocalDate.parse()` din proprie inițiativă, ca să prevină crash-uri dacă formatul de dată din DB e corupt
+- Identificarea că `DailyCheckInDao` avea deja query-urile necesare → fără cod redundant
+
+**Intervenție umană:** verificarea manuală a densității pixelilor (`LocalDensity`) ca textul axelor să fie lizibil pe diferite ecrane.
+
+---
+
+### 4. Implementare — Agent 1 Pattern Detector (Ollama + Fallback)
+
+**Tool folosit:** Claude
+
+**User story:** detectarea automată de tipare negative (ex: <6h somn timp de 3 zile consecutive) cu alertă către utilizator.
+
+**Tehnologie:** Ollama local (model `mistral`) cu mecanism de **rule-based fallback** pentru robustețe. Trigger: `WorkManager` declanșat imediat după salvarea unui check-in.
+
+**Configurarea Ollama:**
+- AI-ul mi-a dat comanda de pull, dar primul `ollama run` a dat eroare de conexiune
+- Identificare (mixt uman + AI): trebuia pornit serverul în terminal separat și setat `OLLAMA_HOST=0.0.0.0` pentru ca emulatorul Android să poată comunica cu host-ul prin IP-ul special `10.0.2.2`
+
+**Arhitectura promptului (prompt engineering):**
+- Context: datele din ultimele 14 zile
+- Reguli clare de severitate: Low / Medium / High
+- **Constrângere strictă de format:** răspuns exclusiv JSON, pentru parsing direct în obiecte Kotlin
+
+**Iterații pe prompt:** modelul `mistral` are tendința să adauge text conversațional dacă nu îi ceri explicit `"return JSON ONLY, no commentary"`. Prima versiune a promptului ducea la eșecul parser-ului; a doua versiune cu constrângere explicită a rezolvat problema.
+
+**Erori de integrare:**
+- `Unresolved reference` pentru OkHttp — Gradle nu vedea librăria; fix: `File → Sync Project with Gradle Files`
+- Worker-ul nu găsea `getCheckInsFromOnce` — AI-ul uitase să menționeze că trebuie modificată și interfața DAO, nu doar apelată metoda. Corectarea: adăugare `suspend fun` în `DailyCheckInDao`
+
+| Funcționalitate | Status | Detalii tehnice |
+|---|---|---|
+| Integrare Ollama | ✅ Succes | OkHttp pe portul 11434 |
+| Sistem de fallback | ✅ Implementat | Algoritm clasic (streaks) când LLM-ul nu răspunde sau halucinează |
+| UI Feedback | ✅ Implementat | Carduri colorate contextual (roșu / portocaliu / galben) după severitate |
+| Schema Room | ✅ v5 | Incrementare versiune la adăugarea `PatternAlert` |
+
+---
+
+### 5. Implementare — Agent 5 Accountability Coach (AC-01)
+
+**Tool folosit:** Claude
+
+**User story:** raport de seară (21:00) care corelează wellness + habits + tranzacții, generat de Agent 5.
+
+**Tehnologie:** `WorkManager` pentru programare zilnică, `DataStore` pentru persistență, `PendingIntent` pentru navigare prin notificări.
+
+**Erori de compilare prin „copy-paste logic" al AI-ului:**
+
+**A. Imports halucinate** — AI-ul a sugerat:
+- `java.util.Locale.filter` (nu există)
+- `android.R.attr.onClick` (importat greșit în `MainActivity`)
+
+**B. Eroare de structură UI** — Un buton de test a fost plasat ca parametru al unei funcții în loc de a fi într-un container `Column`. Rezolvare: refactorizare manuală a `MainActivity`, separare `CheckInScreen` de butoanele de test cu `Modifier.weight(1f)` pentru layout corect.
+
+**Bug-uri de logică identificate post-compile:**
+
+- **Bug „notificare mute":** dacă lipsea check-in-ul de azi, utilizatorul primea notificarea dar aceasta nu era clicabilă
+- **Bug „silent failure":** dacă lipseau tranzacțiile, worker-ul se oprea fără să anunțe utilizatorul
+
+**Soluție:** refactorizare `sendNotification` — de la parametru `boolean openReport` la parametru `Int targetTab`, mapând dinamic destinațiile:
+
+| Stare | Redirecționare |
+|---|---|
+| Fără check-in | Tab 3 (Wellness) |
+| Fără tranzacții | Tab 0 (Budget) |
+| Raport generat OK | Tab 5 (Report Screen) |
+
+| Componentă | Contribuție AI | Intervenție umană |
+|---|---|---|
+| Logică Worker | 80% | 20% (corecție `PendingIntent` + `requestCode`) |
+| Persistență DataStore | 100% | Verificare nume fișier preferințe |
+| Debugging | 40% | 60% (identificare bug-uri de navigare și layout) |
+
+**Lecție tehnică:** folosirea aceluiași `requestCode=0` pentru notificări diferite face Android să refolosească intențiile cache-uite. Soluția a fost utilizarea `targetTab` ca `requestCode` pentru a garanta unicitatea.
+
+---
+
+### 6. Testare automată și Agent Evals
+
+**Tool folosit:** Claude
+
+**Strategie de testare pe 3 niveluri:**
+1. **Unit Tests (JUnit)** — logica pură din Repositories și ViewModels
+2. **Instrumented Tests (Compose)** — UI pe emulator
+3. **Agent Evals** — prompt-urile și mecanismele de fallback pentru Agent 1 și Agent 5
+
+**Testarea Pattern Detector Agent (Agent 1):**
+- **Scenariu succes (LLM):** verificare parsing JSON generat de Ollama
+- **Scenariu fallback:** simularea unei defecțiuni a serverului LLM pentru a valida streak-based detection (ex: 3 zile consecutive sub 6h somn detectate fără AI)
+
+**Testarea unitară a Repository-ului:** set de date controlat pentru `DailyCheckInRepository` ca să confirme că query-urile Room returnează exact fereastra de 7/14 zile.
+
+**Generare edge cases cu AI:**
+- User cu exact 2 zile de date → verificare condiție „minim 3 zile pentru grafic"
+- Valori extreme (energy=1/10, stress=10/10) → verificare alertă HIGH
+
+**Probleme de sync în teste:**
+- Testele nu vedeau noua entitate `PatternAlert`
+- Sugestie AI: `./gradlew assembleDebugAndroidTest` pentru a forța reconstrucția DB-ului de test → consistență între schema Room din app și cea din test
+
+| Tip test | Componentă | Rezultat |
+|---|---|---|
+| Unit | `PatternDetectorAgent` | ✅ Fallback + JSON parsing |
+| Unit | `ReportViewModel` | ✅ `StateFlow` emission din DataStore |
+| Instrumented | `CheckInScreen` | ✅ Afișare card alertă |
+| Agent Eval | `OllamaClient` | ✅ Timeouts + gestionare erori conexiune |
+
+---
+
+### 7. Reflecții și lecții învățate
+
+**Atenția la „stale context":** AI-ul tinde să simplifice fișiere mari și să șteargă cod existent dacă nu îi reamintești constant să-l păstreze. Cel mai eficient prompt s-a dovedit: „eu am X linii, tu mi-ai dat Y, păstrează tot ce există".
+
+**Testarea deterministă a nedeterminismului:** un agent AI nu poate fi testat prin `assertEquals` pe output, ci prin verificarea structurii (`conține câmpul severity?`). Pentru CI/CD am simulat răspunsurile HTTP cu `MockWebServer` pentru a evita dependența de un server Ollama real.
+
+**Sistem hibrid (LLM + fallback):** dacă m-aș fi bazat doar pe AI generativ, aplicația ar fi fost inutilizabilă fără Ollama pornit. Combinația cu algoritmi clasici (streaks) asigură o experiență constantă.
+
+**Prompt engineering iterativ:** modelul `mistral` cere constrângeri explicite („JSON only, no commentary") altfel adaugă text conversațional care strică parsing-ul.
+
+**Complexitatea infrastructurii:** AI-ul e excelent la boilerplate (Entity, DAO) dar are nevoie de ghidaj uman pentru rețelistică (IP-uri emulator, permisiuni `CleartextTraffic` în Manifest).
+
+**Limite în layout-uri complexe Compose:** AI-ul poate genera cod sintactic corect care strică ierarhia vizuală dacă nu primește context despre structura `Scaffold`-ului părinte.
+
+**Testare manuală a scenariilor de eroare:** fără testarea explicită a căilor de eșec (lipsă date), Agent 5 ar fi rămas într-o stare de „silent failure".
+
+**Corelarea versiunilor DB:** orice schimbare de schemă (ex: adăugarea `PatternAlert`) cere update imediat al „Test Database Builder", altfel testele instrumentate cad cu `IllegalStateException`.
+
+---
 
 ---
 
