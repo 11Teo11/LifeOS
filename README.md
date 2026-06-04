@@ -7,6 +7,7 @@ Aplicație Android pentru studenți care combină gestionarea bugetului, urmări
 ## Cuprins
 
 - [Descriere](#descriere)
+- [DEMO](#demo)
 - [Funcționalități](#funcționalități)
 - [Arhitectură și Tech Stack](#arhitectură-și-tech-stack)
 - [Agenți AI](#agenți-ai)
@@ -19,6 +20,11 @@ Aplicație Android pentru studenți care combină gestionarea bugetului, urmări
 ## Descriere
 
 LifeOS este o aplicație Android nativă care ajută studenții să își gestioneze viața academică și personală. Aplicația importă automat tranzacțiile bancare din Revolut, le clasifică folosind un model AI local (llama3.2), sincronizează evenimentele din Google Calendar și generează rapoarte zilnice personalizate.
+
+---
+## Demo
+
+https://youtube.com/shorts/Vf92a7XKIFo?feature=share
 
 ---
 
